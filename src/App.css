@@ -1,38 +1,42 @@
-.App {
-  text-align: center;
+/* Add this to your CSS file, e.g., App.css */
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
+.header {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+  justify-content: space-between;
+  background-color: powderblue; /* Light color background */
+  padding: 10px 5%;
+  width: 100%; /* Center header with 15% total margin (7.5% on each side) */
+  margin: 0 auto;
+  box-sizing: border-box;
 }
 
-.App-link {
-  color: #61dafb;
+.logo {
+  font-size: 1.5em;
+  color: #333;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.nav-links {
+  list-style-type: none;
+  display: flex;
+  gap: 20px; /* Equal space between links */
+}
+
+.nav-links li {
+  margin: 0;
+}
+
+.nav-links a {
+  color: #333;
+  text-decoration: none;
+  font-size: 1em;
+}
+
+.nav-links a:hover {
+  text-decoration: underline;
 }
