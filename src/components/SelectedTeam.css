@@ -1,0 +1,97 @@
+
+
+.selected-team-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .teams-container {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 10px; 
+    justify-content: space-around; 
+    margin-bottom: 20px;
+    overflow-x: auto; 
+  }
+  
+  .team {
+    flex: 1 0 21%; 
+    min-width: 250px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 10px;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+  }
+  
+  .team table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  .team th, .team td {
+    padding: 8px;
+    text-align: left;
+  }
+  
+  .team th {
+    background-color: #f1f1f1;
+  }
+  
+  h2, h3 {
+    text-align: center;
+  }
+  
+  .grades-unsold-container {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .grades-container {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 10px;
+    justify-content: space-around; 
+    margin-bottom: 20px; 
+  }
+  
+  .grade-section {
+    flex: 1 0 13%; 
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 10px;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+  }
+  
+  .grade-section ul {
+    list-style-type: none;
+    padding: 0;
+  }
+  
+  .grade-section li {
+    padding: 5px 0;
+    border-bottom: 1px solid #ddd;
+  }
+  
+  .grade-section h3 {
+    text-align: center;
+  }
+  
+  .unsold-players {
+    align-self: flex-end;
+    margin-top: 20px;
+    width: 100%;
+  }
+  
+  .unsold-players table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  .unsold-players th, .unsold-players td {
+    padding: 8px;
+    text-align: left;
+  }
+  
+  
