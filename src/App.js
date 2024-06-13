@@ -1,12 +1,14 @@
 import React from 'react';
 import { BrowserRouter as Router, Route, Link, Routes } from 'react-router-dom';
 import './App.css';
+import PlayerManager from './components/PlayerManager';
 const Header = () => {
   return (
     <header>
       <nav>
         <div className="header">
-          <h1>Cricbid</h1>
+          <h1 className="home"><Link to="/">Cricbid</Link></h1>
+          
           <ul className="nav-links">
             <li>
               <Link to="/team-management">Team Management</Link>
@@ -34,6 +36,7 @@ const App = () => {
       <div>
         <Header />
         <Routes>
+          <Route path='/' Component={PlayerManager} />
           <Route path="/team-management" component={TeamManagement} />
           <Route path="/bidding" component={Bidding} />
           <Route path="/selected-team" component={SelectedTeam} />
