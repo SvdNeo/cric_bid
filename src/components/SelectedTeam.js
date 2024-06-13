@@ -45,7 +45,9 @@ const SelectedTeam = () => {
         <tr key={player.id}>
           <td>{player.name}</td>
           <td>{player.grade}</td>
+          <td>{player.price}</td>
           <td>{player.budget}</td>
+          <td>{player.balance}</td>
         </tr>
       ));
   };
@@ -73,6 +75,8 @@ const SelectedTeam = () => {
                   <th>Name</th>
                   <th>Grade</th>
                   <th>Price</th>
+                  <th>Budget</th>
+                  <th>Balance</th>
                 </tr>
               </thead>
               <tbody>{renderPlayers(team.id)}</tbody>
@@ -105,7 +109,7 @@ const SelectedTeam = () => {
                 <tr key={player.id}>
                   <td>{player.name}</td>
                   <td>{player.grade}</td>
-                  <td>{player.budget}</td>
+                  <td>{player.price}</td>
                 </tr>
               ))}
             </tbody>

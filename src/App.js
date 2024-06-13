@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Route, Link, Routes } from 'react-router-dom';
 import './App.css';
 import PlayerManager from './components/PlayerManager';
 import SelectedTeam from './components/SelectedTeam';
+import Bidding from './components/Bidding';
 const Header = () => {
   return (
     <header>
@@ -27,8 +28,7 @@ const Header = () => {
   );
 };
 
-const TeamManagement = () => <div>Team Management Page</div>;
-const Bidding = () => <div>Bidding Page</div>;
+
 
 
 const App = () => {
@@ -37,9 +37,9 @@ const App = () => {
       <div>
         <Header />
         <Routes>
-          <Route path='/' Component={PlayerManager} />
-          <Route path="/team-management" component={TeamManagement} />
-          <Route path="/bidding" component={Bidding} />
+          <Route path='/' element={<PlayerManager/>} />
+         
+          <Route path="/bidding" element={<Bidding/>} />
           <Route path="/selected-team" element={<SelectedTeam/>} />
         </Routes>
       </div>
