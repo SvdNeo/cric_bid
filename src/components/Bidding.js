@@ -65,7 +65,7 @@ const BiddingPage = () => {
       setBidPrice(playerBasePrice);
       setStatus(player.status || 'new');
       setTimer(15);
-      setBiddingActive(false); // Ensure bidding is not active when selecting a player
+      setBiddingActive(false); 
       setCurrentTeamIndex(0);
       teams.forEach(team => team.bidding = true);
       setTeams([...teams]);
