@@ -20,62 +20,49 @@ const SelectedTeam = () => {
 
   const fetchData = async () => {
     try {
-      console.log("Fetching teams data...");
       const teamsSnapshot = await getDocs(collection(db, "teams"));
       const teamsList = teamsSnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       }));
       setTeams(teamsList);
-      console.log("Teams fetched:", teamsList);
 
-      console.log("Fetching grades data...");
       const gradesSnapshot = await getDocs(collection(db, "grade"));
       const gradesList = {};
       gradesSnapshot.forEach(doc => {
-        gradesList[doc.data().name] = doc.data().price;
+        const gradeData = doc.data();
+        gradesList[gradeData.name] = { price: gradeData.price };
       });
       setGrades(gradesList);
-      console.log("Grades fetched:", gradesList);
 
-      console.log("Fetching players data...");
       const playersSnapshot = await getDocs(collection(db, "players"));
       const playersList = playersSnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       }));
       setPlayers(playersList);
-      console.log("Players fetched:", playersList);
     } catch (error) {
-      console.error("Error fetching data:", error);
       setError("Failed to fetch data. Please try again.");
     }
   };
- 
+
   const fetchTeams = async () => {
     try {
       const teamsSnapshot = await getDocs(collection(db, "teams"));
       const teams = teamsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      console.log("Fetched teams:", teams); // Log fetched teams for verification
       return teams;
     } catch (error) {
       console.error("Error fetching teams:", error);
     }
   };
-  
-  // Then use fetchTeams in resetTeams
 
   const resetTeams = async () => {
-    debugger;
     const batch = writeBatch(db);
-    const teams = await fetchTeams(); // Fetch teams
-  
+    const teams = await fetchTeams();
     try {
       teams.forEach((team) => {
         if (team && team.id) {
           const teamRef = doc(db, "teams", team.id);
-          console.log("Updating team ID:", team.id); // Log team ID for debugging
-          console.log("Team reference path:", teamRef.path); // Log document path for debugging
           batch.update(teamRef, { balance: 10000 });
         } else {
           throw new Error(`Invalid team data: ${JSON.stringify(team)}`);
@@ -91,11 +78,10 @@ const SelectedTeam = () => {
       await batch.commit();
       fetchData();
     } catch (error) {
-      console.error("Error resetting teams and players:", error);
       setError("Failed to reset teams and players. Please try again.");
     }
   };
-  
+
   const handlePlayerDelete = async (playerId, teamId, playerBidPrice) => {
     try {
       const playerRef = doc(db, "players", playerId);
@@ -120,7 +106,6 @@ const SelectedTeam = () => {
         );
       }
     } catch (error) {
-      console.error("Error deleting player:", error);
       setError("Failed to delete player. Please try again.");
     }
   };
@@ -134,7 +119,6 @@ const SelectedTeam = () => {
 
   const handlePlayersDelete = async () => {
     const batch = writeBatch(db);
-
     try {
       for (const playerId of Object.keys(selectedPlayersForDeletion)) {
         if (selectedPlayersForDeletion[playerId]) {
@@ -158,7 +142,6 @@ const SelectedTeam = () => {
       fetchData();
       setSelectedPlayersForDeletion({});
     } catch (error) {
-      console.error("Error deleting players:", error);
       setError("Failed to delete players. Please try again.");
     }
   };
@@ -169,19 +152,8 @@ const SelectedTeam = () => {
       .sort((a, b) => a.grade.localeCompare(b.grade))
       .map((player) => (
         <tr key={player.id}>
-          <td>
-            <input
-              type="checkbox"
-              checked={selectedPlayersForDeletion[player.id] || false}
-              onChange={() => togglePlayerSelection(player.id)}
-            />
-          </td>
           <td>{player.name}</td>
           <td>{player.grade}</td>
-          <td>{player.price}</td>
-          <td>
-            <button onClick={() => handlePlayerDelete(player.id, teamId, player.price)}>Delete</button>
-          </td>
         </tr>
       ));
   };
@@ -208,7 +180,7 @@ const SelectedTeam = () => {
       setTimeout(() => setError(""), 3000);
     } else {
       setSelectedPlayer(player);
-      setBidPrice(grades[player.grade] || 100);
+      setBidPrice(grades[player.grade]?.price || 100);
       setStatus("");
     }
   };
@@ -249,72 +221,39 @@ const SelectedTeam = () => {
       }
 
       setSelectedPlayer(null);
-      setSelectedTeamId("");
       setBidPrice(100);
+      setSelectedTeamId("");
       setStatus("");
+    } else {
+      setError("Please select all required fields.");
+      setTimeout(() => setError(""), 3000);
     }
   };
 
-  const gradesList = [
-    { grade: "A", points: 700 },
-    { grade: "B", points: 600 },
-    { grade: "C", points: 500 },
-    { grade: "D", points: 400 },
-    { grade: "E", points: 300 },
-    { grade: "F", points: 200 },
-    { grade: "G", points: 100 },
-  ];
+  const gradeOrder = ["A", "B", "C", "D", "E", "F", "G"];
 
   return (
     <div className="selected-team-container">
       {error && <div className="error-popup">{error}</div>}
-      <div className="reset-button-container"></div>
-     
-      <div className="teams-container">
-        <div className="reset">
-          <h2>Teams</h2>
-          <button onClick={resetTeams}>Reset Teams</button>
-        </div>
-        {teams.map((team) => (
-          <div className="team" key={team.id}>
-            <h3>{team.teamname}</h3>
-            <div className="budget">
-              <p>Budget: {team.budget}</p>
-              <p>Balance: {team.balance}</p>
-            </div>
-            <table border="1">
-              <thead>
-                <tr>
-                  <th>Select</th>
-                  <th>Name</th>
-                  <th>Grade</th>
-                  <th>Price</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>{renderPlayers(team.id)}</tbody>
-            </table>
-          </div>
-        ))}
-        <button onClick={handlePlayersDelete}>Delete Selected Players</button>
-      </div>
+
+      {/* Bidding Area */}
       <div className="bidding-area">
-        <h2>Bidding Area</h2>
+        <h2 className="bidding-title">Bidding Area</h2>
         {selectedPlayer && (
-          <div>
+          <div className="bidding-form">
             <h2>{selectedPlayer.name}</h2>
             <p>Grade: {selectedPlayer.grade}</p>
-            <p>Base Price: ${grades[selectedPlayer.grade]}</p>
-            <div>
+            <p>Base Price: ${grades[selectedPlayer.grade]?.price}</p>
+            <div >
               <label>Bid Price: </label>
-              <select
+              <select style={{width:"75px"}}
                 value={bidPrice}
                 onChange={(e) => setBidPrice(Number(e.target.value))}
               >
                 {[...Array(49)].map((_, i) => {
                   const price = (i + 1) * 100;
                   return (
-                    price >= (grades[selectedPlayer.grade] || 100) && (
+                    price >= (grades[selectedPlayer.grade]?.price || 100) && (
                       <option key={i} value={price}>
                         {price}
                       </option>
@@ -324,36 +263,54 @@ const SelectedTeam = () => {
               </select>
             </div>
             <div>
-              <label>Team: </label>
-              <select
-                value={selectedTeamId}
-                onChange={(e) => setSelectedTeamId(e.target.value)}
-              >
-                <option value="">Select a team</option>
-                {teams.map((team) => (
-                  <option key={team.id} value={team.id}>
-                    {team.teamname}
-                  </option>
-                ))}
-              </select>
+              <label>Current Bidding Team: </label>
+              <input type="text" id="current-team"  className="small-input" />
             </div>
-            <div>
-              <label>Status: </label>
-              <select value={status} onChange={(e) => setStatus(e.target.value)}>
-                <option value="">Select a new value</option>
-                <option value="sold">Sold</option>
-                <option value="unsold">Unsold</option>
-              </select>
-            </div>
+            
             <button onClick={handleBidSubmit}>Submit Bid</button>
+            <button >Pass</button>
           </div>
         )}
       </div>
+
+      {/* Teams Section */}
+      <div className="teams-container">
+      <div className="reset">
+          <h2>Teams</h2>
+          <button className="btn-reset" onClick={resetTeams}>Reset </button>
+        </div> 
+      <div className="teams">
+        
+        {teams.map((team) => (
+          <div className="team" key={team.id}>
+            
+            <h3 style={{textAlign:"center"}}>{team.teamname}</h3>
+            <div className="budget">
+              <p>Budget: {team.budget}</p>
+              <p>Balance: {team.balance}</p>
+            </div>
+            <table border="1">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Grade</th>
+                </tr>
+              </thead>
+              <tbody>{renderPlayers(team.id)}</tbody>
+            </table>
+          </div>
+        ))}
+        
+      </div>
+      </div>
+
+      {/* Grades Section */}
       <div className="grades-container">
-        {gradesList.map(({ grade, points }) => (
+        {gradeOrder
+          .filter(grade => grades[grade]) // Ensure only existing grades are rendered
+          .map(grade => (
           <div className="grade-section" key={grade}>
-            <h3>Grade {grade}</h3>
-            <p>Points: {points}</p>
+            <h3>Grade {grade} ({grades[grade].price})</h3>
             <ul>{renderPlayersByGrade(grade)}</ul>
           </div>
         ))}
