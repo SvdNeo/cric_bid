@@ -4,6 +4,8 @@ import './App.css';
 import PlayerManager from './components/PlayerManager';
 import SelectedTeam from './components/SelectedTeam';
 import Bidding from './components/Bidding';
+
+
 const Header = () => {
   return (
     <header>
@@ -21,6 +23,7 @@ const Header = () => {
             <li>
               <Link to="/selected-team">Selected Team</Link>
             </li>
+            
           </ul>
         </div>
       </nav>
@@ -41,6 +44,7 @@ const App = () => {
          
           <Route path="/bidding" element={<Bidding/>} />
           <Route path="/selected-team" element={<SelectedTeam/>} />
+         
         </Routes>
       </div>
     </Router>
