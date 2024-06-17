@@ -2,7 +2,6 @@
   display: grid;
   grid-template-columns: 1fr; /* Single column layout */
   grid-template-rows: 0.4fr 1fr 0.6fr; /* Divide into three equal sections */
-
   gap: 10px; /* Gap between sections */
   padding: 10px;
   height: 100vh; /* Full height of viewport */
@@ -17,7 +16,6 @@
   overflow-y: auto; /* Enable vertical scrolling if content exceeds container height */
   padding: 10px;
 }
-
 
 .teams-container {
   padding: 10px;
@@ -38,58 +36,56 @@
   width: 100%;
   padding: 10px;
   gap: 20px;
-
   height: 40%;
   display: grid;
   grid-template-columns: 1fr 1fr 1fr 1fr;
   border-right: 1px solid #ccc;
-  /* margin-top: -10px; Negative margin to remove gap */
 }
 
-.bidding-title{
+.bidding-title {
   display: flex;
   justify-content: center;
   padding: 0;
   margin: 0;
 }
+
 .bidding-area {
   width: 100%;
   padding: 10px;
-  
   height: 20%;
-
   border-right: 1px solid #ccc;
 }
-.btn-reset{
-  background-color: red; 
+
+.btn-reset {
+  background-color: red;
   border: none;
   color: white;
   padding: 5px;
-height: fit-content;
-width: fit-content;
+  height: fit-content;
+  width: fit-content;
   text-align: center;
-  text-decoration: none
+  text-decoration: none;
 }
+
 .bidding-form {
   display: flex;
   justify-content: space-around;
   width: 100%;
   align-items: center;
 }
+
 .grades-container {
   width: 100%;
   padding: 10px;
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr; /* Two columns */
+  grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr; /* Seven columns */
   gap: 10px; /* Gap between cards */
-  
 }
 
 .team,
 .grade-section {
   margin: 0px;
   padding: 0px;
-
 }
 
 .budget {
@@ -119,9 +115,11 @@ table th {
 li {
   cursor: pointer;
 }
-#current-team{
+
+#current-team {
   max-width: 100px;
 }
+
 li:hover {
   text-decoration: underline;
 }
@@ -133,14 +131,12 @@ li:hover {
   margin: 10px 0;
 }
 
-/* New styles for grade sections to display as cards */
 .grade-section {
   background-color: #f9f9f9;
   border: 1px solid #ddd;
   border-radius: 5px;
   padding: 10px;
   min-width: 120px;
-  
 }
 
 .grade-section h3 {
@@ -161,7 +157,6 @@ li:hover {
   border-bottom: none;
 }
 
-
 .input-group {
   display: flex;
   flex-direction: column;
@@ -174,4 +169,99 @@ li:hover {
 
 .input-group select {
   width: fit-content;
+}
+
+/* Responsive styles */
+@media (max-width: 992px) {
+  .teams {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+
+  .grades-container {
+    grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+  }
+
+  .selected-team-container {
+    grid-template-rows: 0.4fr 1.2fr 0.4fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .teams {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .grades-container {
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+  }
+
+  .bidding-form {
+    flex-direction: column;
+  }
+
+  .selected-team-container {
+    grid-template-rows: auto auto auto;
+    height: auto;
+  }
+}
+
+@media (max-width: 576px) {
+  .teams {
+    grid-template-columns: 1fr;
+  }
+
+  .grades-container {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+
+  .selected-team-container {
+    grid-template-rows: auto auto auto;
+    height: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .grades-container {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .selected-team-container {
+    grid-template-rows: auto auto auto;
+    height: auto;
+  }
+
+  .bidding-title {
+    font-size: 14px;
+  }
+
+  .bidding-area {
+    height: auto;
+    padding: 5px;
+  }
+
+  .bidding-form {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .btn-reset {
+    padding: 8px 16px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 360px) {
+  .grades-container {
+    grid-template-columns: 1fr;
+  }
+
+  .selected-team-container {
+    grid-template-rows: auto auto auto;
+    height: auto;
+  }
+
+  .btn-reset {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
 }
