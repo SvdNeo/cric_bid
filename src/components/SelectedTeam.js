@@ -266,7 +266,7 @@ const SelectedTeam = () => {
               <label>Current Bidding Team: </label>
               <input type="text" id="current-team"  className="small-input" />
             </div>
-            
+            <button >Start Bid</button>
             <button onClick={handleBidSubmit}>Submit Bid</button>
             <button >Pass</button>
           </div>
