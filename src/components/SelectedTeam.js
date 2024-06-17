@@ -12,7 +12,7 @@ const SelectedTeam = () => {
   const [selectedTeamId, setSelectedTeamId] = useState("");
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
-  
+
 
   useEffect(() => {
     fetchData();
@@ -81,7 +81,6 @@ const SelectedTeam = () => {
       setError("Failed to reset teams and players. Please try again.");
     }
   };
-
 
 
 
