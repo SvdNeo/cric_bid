@@ -1,20 +1,49 @@
 .selected-team-container {
-  display: flex;
-  flex-direction: column;
-  
+  display: grid;
+  grid-template-columns: 1fr; /* Single column layout */
+  grid-template-rows: 0.4fr 1fr 0.6fr; /* Divide into three equal sections */
+
+  gap: 10px; /* Gap between sections */
+  padding: 10px;
+  height: 100vh; /* Full height of viewport */
 }
 
-.teams-container{
-  align-items: center;
+.bidding-area {
+  padding: 10px;
 }
-.teams{
+
+.teams-container,
+.grades-container {
+  overflow-y: auto; /* Enable vertical scrolling if content exceeds container height */
+  padding: 10px;
+}
+
+
+.teams-container {
+  padding: 10px;
+  overflow-x: hidden; /* Hide horizontal overflow */
+}
+
+.reset {
+  display: flex;
+  gap: 20px; /* Adjust the gap as needed */
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+  align-items: center;
+  height: fit-content;
+}
+
+.teams {
   width: 100%;
   padding: 10px;
+  gap: 20px;
+
   height: 40%;
   display: grid;
   grid-template-columns: 1fr 1fr 1fr 1fr;
   border-right: 1px solid #ccc;
-  gap:3%;
+  /* margin-top: -10px; Negative margin to remove gap */
 }
 
 .bidding-title{
@@ -53,12 +82,14 @@ width: fit-content;
   display: grid;
   grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr; /* Two columns */
   gap: 10px; /* Gap between cards */
+  
 }
 
 .team,
 .grade-section {
   margin: 0px;
   padding: 0px;
+
 }
 
 .budget {
@@ -88,7 +119,9 @@ table th {
 li {
   cursor: pointer;
 }
-
+#current-team{
+  max-width: 100px;
+}
 li:hover {
   text-decoration: underline;
 }
@@ -106,6 +139,8 @@ li:hover {
   border: 1px solid #ddd;
   border-radius: 5px;
   padding: 10px;
+  min-width: 120px;
+  
 }
 
 .grade-section h3 {
@@ -126,15 +161,6 @@ li:hover {
   border-bottom: none;
 }
 
-.reset {
-  display: flex;
-  gap: 10px;
-  justify-content: center;
-  margin: 0;
-  padding: 0;
-  align-items: center;
-  height: fit-content;
-}
 
 .input-group {
   display: flex;
