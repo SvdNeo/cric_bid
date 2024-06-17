@@ -12,7 +12,7 @@ const SelectedTeam = () => {
   const [selectedTeamId, setSelectedTeamId] = useState("");
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
- 
+
 
   useEffect(() => {
     fetchData();
@@ -82,9 +82,7 @@ const SelectedTeam = () => {
     }
   };
 
-  
 
-  
 
   const renderPlayers = (teamId) => {
     return players
