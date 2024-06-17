@@ -12,7 +12,7 @@ const SelectedTeam = () => {
   const [selectedTeamId, setSelectedTeamId] = useState("");
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
-  const [selectedPlayersForDeletion, setSelectedPlayersForDeletion] = useState({});
+ 
 
   useEffect(() => {
     fetchData();
@@ -82,69 +82,9 @@ const SelectedTeam = () => {
     }
   };
 
-  const handlePlayerDelete = async (playerId, teamId, playerBidPrice) => {
-    try {
-      const playerRef = doc(db, "players", playerId);
-      await updateDoc(playerRef, { status: "new", teamId: "" });
+  
 
-      setPlayers(players.map(player =>
-        player.id === playerId ? { ...player, status: "new", teamId: "" } : player
-      ));
-
-      const team = teams.find((team) => team.id === teamId);
-      if (team) {
-        const updatedTeam = {
-          ...team,
-          balance: team.balance + playerBidPrice,
-        };
-
-        const teamDoc = doc(db, "teams", teamId);
-        await updateDoc(teamDoc, updatedTeam);
-
-        setTeams((prevTeams) =>
-          prevTeams.map((t) => (t.id === teamId ? updatedTeam : t))
-        );
-      }
-    } catch (error) {
-      setError("Failed to delete player. Please try again.");
-    }
-  };
-
-  const togglePlayerSelection = (playerId) => {
-    setSelectedPlayersForDeletion((prevSelected) => ({
-      ...prevSelected,
-      [playerId]: !prevSelected[playerId],
-    }));
-  };
-
-  const handlePlayersDelete = async () => {
-    const batch = writeBatch(db);
-    try {
-      for (const playerId of Object.keys(selectedPlayersForDeletion)) {
-        if (selectedPlayersForDeletion[playerId]) {
-          const playerRef = doc(db, "players", playerId);
-          batch.update(playerRef, { status: "new", teamId: "" });
-
-          const player = players.find((p) => p.id === playerId);
-          const team = teams.find((t) => t.id === player.teamId);
-          if (team) {
-            const updatedTeam = {
-              ...team,
-              balance: team.balance + player.price,
-            };
-            const teamDoc = doc(db, "teams", team.id);
-            batch.update(teamDoc, updatedTeam);
-          }
-        }
-      }
-
-      await batch.commit();
-      fetchData();
-      setSelectedPlayersForDeletion({});
-    } catch (error) {
-      setError("Failed to delete players. Please try again.");
-    }
-  };
+  
 
   const renderPlayers = (teamId) => {
     return players
