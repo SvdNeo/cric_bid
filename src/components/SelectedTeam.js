@@ -4,15 +4,17 @@ import { collection, getDocs, updateDoc, doc, writeBatch } from "firebase/firest
 import "./SelectedTeam.css";
 
 const SelectedTeam = () => {
+  const [initialTeams, setInitialTeams] = useState([]);
   const [teams, setTeams] = useState([]);
   const [grades, setGrades] = useState({});
+  const [initialPlayers, setInitialPlayers] = useState([]);
   const [players, setPlayers] = useState([]);
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [bidPrice, setBidPrice] = useState(100);
   const [currentBiddingTeamIndex, setCurrentBiddingTeamIndex] = useState(0);
-  const [currentTeamIndex, setCurrentTeamIndex] = useState(0);
+  const [biddingStartTeamIndex, setBiddingStartTeamIndex] = useState(0);
   const [error, setError] = useState("");
-  
+  const [currentHighestBiddingTeamIndex,setCurrentHighestBiddingTeamIndex]= useState(null)
 
   useEffect(() => {
     fetchData();
@@ -25,6 +27,7 @@ const SelectedTeam = () => {
         id: doc.id,
         ...doc.data(),
       }));
+      setInitialTeams(teamsList);
       setTeams(teamsList);
 
       const gradesSnapshot = await getDocs(collection(db, "grade"));
@@ -40,6 +43,7 @@ const SelectedTeam = () => {
         id: doc.id,
         ...doc.data(),
       }));
+      setInitialPlayers(playersList);
       setPlayers(playersList);
     } catch (error) {
       setError("Failed to fetch data. Please try again.");
@@ -83,7 +87,7 @@ const SelectedTeam = () => {
   };
 
   const renderPlayers = (teamId) => {
-    return players
+    return initialPlayers
       .filter((player) => player.teamId === teamId)
       .sort((a, b) => a.grade.localeCompare(b.grade))
       .map((player) => (
@@ -95,7 +99,7 @@ const SelectedTeam = () => {
   };
 
   const renderPlayersByGrade = (grade) => {
-    return players
+    return initialPlayers
       .filter((player) => player.grade === grade)
       .map((player) => (
         <li
@@ -109,9 +113,10 @@ const SelectedTeam = () => {
       ));
   };
 
-  const handleBidSubmit = async () => {
+  const handleBidSubmit = async (tempTeams) => {
     if (selectedPlayer && bidPrice) {
-      const remainingTeams = teams.filter((team) => team.balance >= bidPrice);
+      setCurrentHighestBiddingTeamIndex(currentBiddingTeamIndex);
+      const remainingTeams = tempTeams.filter((team) => team.balance >= bidPrice);
 
       if (remainingTeams.length === 1) {
         const winningTeam = remainingTeams[0];
@@ -145,9 +150,7 @@ const SelectedTeam = () => {
           )
         );
 
-        setSelectedPlayer(null);
-        setBidPrice(100);
-        setCurrentBiddingTeamIndex(0);
+        resetBid();
       } else {
         setCurrentBiddingTeamIndex((prevIndex) => (prevIndex + 1) % remainingTeams.length);
       }
@@ -158,19 +161,33 @@ const SelectedTeam = () => {
   };
 
   const handleBidPass = () => {
-    const newTeams = teams.filter((_, index) => index !== currentTeamIndex);
-    if (newTeams.length === 1) {
+    const newTeams = teams.filter((_, index) => index !== currentBiddingTeamIndex);
+    setTeams([...newTeams])
+    if (currentHighestBiddingTeamIndex === null && newTeams.length === 0) {
+      console.log("Player unsold");
+      resetBid()
+      return
+    } 
+    if (newTeams.length === 1 && currentHighestBiddingTeamIndex !== null) {
      
-      handleBidSubmit();
+      handleBidSubmit(newTeams);
     } else {
-      const nextTeamIndex = (currentTeamIndex + 1) % newTeams.length;
-      setCurrentTeamIndex(nextTeamIndex);
+      const nextTeamIndex = currentBiddingTeamIndex  % newTeams.length;
+      if(nextTeamIndex === currentHighestBiddingTeamIndex){
+        handleBidSubmit(newTeams);
+      }else{
+        setCurrentBiddingTeamIndex(nextTeamIndex);
+  
+      }
+     
+     
     }
   };
   
 
   const handleBidStart = () => {
     const availablePlayers = players.filter(player => player.status !== "sold");
+    setTeams(initialTeams)
     if (availablePlayers.length === 0) {
       setError("No players available for bidding.");
       return;
@@ -179,7 +196,18 @@ const SelectedTeam = () => {
     const player = availablePlayers[randomPlayerIndex];
     setSelectedPlayer(player);
     setBidPrice(grades[player.grade]?.price || 100);
-    setCurrentBiddingTeamIndex(currentBiddingTeamIndex); 
+    // setCurrentBiddingTeamIndex(biddingStartTeamIndex);
+  };
+
+  const resetBid = () => {
+    const newPlayers = players.filter((player) => player.id !== selectedPlayer.id);
+    setPlayers(newPlayers);
+    setTeams(initialTeams)
+    setSelectedPlayer(null);
+    setBidPrice(100);
+    setBiddingStartTeamIndex((biddingStartTeamIndex + 1) % initialTeams.length);
+    setCurrentBiddingTeamIndex((biddingStartTeamIndex + 1) % initialTeams.length);
+
   };
 
   const gradeOrder = ["A", "B", "C", "D", "E", "F", "G"];
@@ -229,7 +257,7 @@ const SelectedTeam = () => {
             />
           </div>
           <button onClick={handleBidStart}>Start Bid</button>
-          <button onClick={handleBidSubmit} disabled={!selectedPlayer}>Submit Bid</button>
+          <button onClick={() => handleBidSubmit(teams)} disabled={!selectedPlayer}>Submit Bid</button>
           <button onClick={handleBidPass} disabled={!selectedPlayer}>Pass</button>
         </div>
       </div>
@@ -241,7 +269,7 @@ const SelectedTeam = () => {
           <button className="btn-reset" onClick={resetTeams}>Reset</button>
         </div>
         <div className="teams">
-          {teams.map((team) => (
+          {initialTeams.map((team) => (
             <div className="team" key={team.id}>
               <h3 style={{ textAlign: "center" }}>{team.teamname}</h3>
               <div className="budget">
