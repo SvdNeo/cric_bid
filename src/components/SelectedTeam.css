@@ -171,6 +171,12 @@ li:hover {
   width: fit-content;
 }
 
+/* Reduce table row height in teams container */
+.teams-container table td, 
+.teams-container table th {
+  padding: 2px 5px; /* Adjust the padding values as needed */
+}
+
 /* Responsive styles */
 @media (max-width: 992px) {
   .teams {
