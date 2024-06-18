@@ -9,10 +9,10 @@ const SelectedTeam = () => {
   const [players, setPlayers] = useState([]);
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [bidPrice, setBidPrice] = useState(100);
-  const [selectedTeamId, setSelectedTeamId] = useState("");
-  const [status, setStatus] = useState("");
+  const [currentBiddingTeamIndex, setCurrentBiddingTeamIndex] = useState(0);
+  const [currentTeamIndex, setCurrentTeamIndex] = useState(0);
   const [error, setError] = useState("");
-
+  
 
   useEffect(() => {
     fetchData();
@@ -82,8 +82,6 @@ const SelectedTeam = () => {
     }
   };
 
-
-
   const renderPlayers = (teamId) => {
     return players
       .filter((player) => player.teamId === teamId)
@@ -105,67 +103,83 @@ const SelectedTeam = () => {
           style={{
             color: player.status === "new" ? "black" : player.status === "sold" ? "blue" : "red"
           }}
-          onClick={() => handlePlayerClick(player)}
         >
           {player.name}
         </li>
       ));
   };
 
-  const handlePlayerClick = (player) => {
-    if (player.status === "sold") {
-      setError("Player is already sold.");
-      setTimeout(() => setError(""), 3000);
-    } else {
-      setSelectedPlayer(player);
-      setBidPrice(grades[player.grade]?.price || 100);
-      setStatus("");
-    }
-  };
-
   const handleBidSubmit = async () => {
-    if (selectedPlayer && bidPrice && status) {
-      const updatedPlayer = {
-        ...selectedPlayer,
-        price: bidPrice,
-        teamId: status === "sold" ? selectedTeamId : "",
-        status: status,
-      };
+    if (selectedPlayer && bidPrice) {
+      const remainingTeams = teams.filter((team) => team.balance >= bidPrice);
 
-      const playerDoc = doc(db, "players", selectedPlayer.id);
-      await updateDoc(playerDoc, updatedPlayer);
+      if (remainingTeams.length === 1) {
+        const winningTeam = remainingTeams[0];
+        const updatedPlayer = {
+          ...selectedPlayer,
+          price: bidPrice,
+          teamId: winningTeam.id,
+          status: "sold",
+        };
 
-      setPlayers((prevPlayers) =>
-        prevPlayers.map((player) =>
-          player.id === selectedPlayer.id ? updatedPlayer : player
-        )
-      );
+        const playerDoc = doc(db, "players", selectedPlayer.id);
+        await updateDoc(playerDoc, updatedPlayer);
 
-      if (status === "sold" && selectedTeamId) {
-        const team = teams.find((team) => team.id === selectedTeamId);
-        if (team) {
-          const updatedTeam = {
-            ...team,
-            balance: team.balance - bidPrice,
-          };
+        const updatedTeam = {
+          ...winningTeam,
+          balance: winningTeam.balance - bidPrice,
+        };
 
-          const teamDoc = doc(db, "teams", selectedTeamId);
-          await updateDoc(teamDoc, updatedTeam);
+        const teamDoc = doc(db, "teams", winningTeam.id);
+        await updateDoc(teamDoc, updatedTeam);
 
-          setTeams((prevTeams) =>
-            prevTeams.map((t) => (t.id === selectedTeamId ? updatedTeam : t))
-          );
-        }
+        setPlayers((prevPlayers) =>
+          prevPlayers.map((player) =>
+            player.id === selectedPlayer.id ? updatedPlayer : player
+          )
+        );
+
+        setTeams((prevTeams) =>
+          prevTeams.map((team) =>
+            team.id === winningTeam.id ? updatedTeam : team
+          )
+        );
+
+        setSelectedPlayer(null);
+        setBidPrice(100);
+        setCurrentBiddingTeamIndex(0);
+      } else {
+        setCurrentBiddingTeamIndex((prevIndex) => (prevIndex + 1) % remainingTeams.length);
       }
-
-      setSelectedPlayer(null);
-      setBidPrice(100);
-      setSelectedTeamId("");
-      setStatus("");
     } else {
       setError("Please select all required fields.");
       setTimeout(() => setError(""), 3000);
     }
+  };
+
+  const handleBidPass = () => {
+    const newTeams = teams.filter((_, index) => index !== currentTeamIndex);
+    if (newTeams.length === 1) {
+     
+      handleBidSubmit();
+    } else {
+      const nextTeamIndex = (currentTeamIndex + 1) % newTeams.length;
+      setCurrentTeamIndex(nextTeamIndex);
+    }
+  };
+  
+
+  const handleBidStart = () => {
+    const availablePlayers = players.filter(player => player.status !== "sold");
+    if (availablePlayers.length === 0) {
+      setError("No players available for bidding.");
+      return;
+    }
+    const randomPlayerIndex = Math.floor(Math.random() * availablePlayers.length);
+    const player = availablePlayers[randomPlayerIndex];
+    setSelectedPlayer(player);
+    setBidPrice(grades[player.grade]?.price || 100);
+    setCurrentBiddingTeamIndex(currentBiddingTeamIndex); 
   };
 
   const gradeOrder = ["A", "B", "C", "D", "E", "F", "G"];
@@ -177,69 +191,75 @@ const SelectedTeam = () => {
       {/* Bidding Area */}
       <div className="bidding-area">
         <h2 className="bidding-title">Bidding Area</h2>
-        {selectedPlayer && (
-          <div className="bidding-form">
-            <h2>{selectedPlayer.name}</h2>
-            <p>Grade: {selectedPlayer.grade}</p>
-            <p>Base Price: ${grades[selectedPlayer.grade]?.price}</p>
-            <div >
-              <label>Bid Price: </label>
-              <select style={{width:"75px"}}
-                value={bidPrice}
-                onChange={(e) => setBidPrice(Number(e.target.value))}
-              >
-                {[...Array(49)].map((_, i) => {
-                  const price = (i + 1) * 100;
-                  return (
-                    price >= (grades[selectedPlayer.grade]?.price || 100) && (
-                      <option key={i} value={price}>
-                        {price}
-                      </option>
-                    )
-                  );
-                })}
-              </select>
-            </div>
-            <div>
-              <label>Current Bidding Team: </label>
-              <input type="text" id="current-team"  className="small-input" />
-            </div>
-            <button >Start Bid</button>
-            <button onClick={handleBidSubmit}>Submit Bid</button>
-            <button >Pass</button>
+        <div className="bidding-form">
+          {selectedPlayer && (
+            <>
+              <h2>{selectedPlayer.name}</h2>
+              <p>Grade: {selectedPlayer.grade}</p>
+              <p>Base Price: {grades[selectedPlayer.grade]?.price}</p>
+            </>
+          )}
+          <div>
+            <label>Bid Price: </label>
+            <select
+              value={bidPrice}
+              onChange={(e) => setBidPrice(Number(e.target.value))}
+              style={{ width: "75px" }}
+            >
+              {[...Array(49)].map((_, i) => {
+                const price = (i + 1) * 100;
+                return (
+                  price >= (grades[selectedPlayer?.grade]?.price || 100) && (
+                    <option key={i} value={price}>
+                      {price}
+                    </option>
+                  )
+                );
+              })}
+            </select>
           </div>
-        )}
+          <div>
+            <label>Current Bidding Team: </label>
+            <input
+              type="text"
+              id="current-team"
+              className="small-input"
+              value={teams[currentBiddingTeamIndex]?.teamname || ""}
+              readOnly
+            />
+          </div>
+          <button onClick={handleBidStart}>Start Bid</button>
+          <button onClick={handleBidSubmit} disabled={!selectedPlayer}>Submit Bid</button>
+          <button onClick={handleBidPass} disabled={!selectedPlayer}>Pass</button>
+        </div>
       </div>
 
       {/* Teams Section */}
       <div className="teams-container">
-      <div className="reset">
+        <div className="reset">
           <h2>Teams</h2>
-          <button className="btn-reset" onClick={resetTeams}>Reset </button>
-        </div> 
-      <div className="teams">
-        
-        {teams.map((team) => (
-          <div className="team" key={team.id}>
-            
-            <h3 style={{textAlign:"center"}}>{team.teamname}</h3>
-            <div className="budget">
-              <p>Budget: {team.budget}</p>
-              <p>Balance: {team.balance}</p>
+          <button className="btn-reset" onClick={resetTeams}>Reset</button>
+        </div>
+        <div className="teams">
+          {teams.map((team) => (
+            <div className="team" key={team.id}>
+              <h3 style={{ textAlign: "center" }}>{team.teamname}</h3>
+              <div className="budget">
+                <p>Budget: {team.budget}</p>
+                <p>Balance: {team.balance}</p>
+              </div>
+              <table border="1">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Grade</th>
+                  </tr>
+                </thead>
+                <tbody>{renderPlayers(team.id)}</tbody>
+              </table>
             </div>
-            <table border="1">
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Grade</th>
-                </tr>
-              </thead>
-              <tbody>{renderPlayers(team.id)}</tbody>
-            </table>
-          </div>
-        ))}
-        
-      </div>
+          ))}
+        </div>
       </div>
 
       {/* Grades Section */}
@@ -247,11 +267,11 @@ const SelectedTeam = () => {
         {gradeOrder
           .filter(grade => grades[grade]) // Ensure only existing grades are rendered
           .map(grade => (
-          <div className="grade-section" key={grade}>
-            <h3>Grade {grade} ({grades[grade].price})</h3>
-            <ul>{renderPlayersByGrade(grade)}</ul>
-          </div>
-        ))}
+            <div className="grade-section" key={grade}>
+              <h3>Grade {grade} ({grades[grade].price})</h3>
+              <ul>{renderPlayersByGrade(grade)}</ul>
+            </div>
+          ))}
       </div>
     </div>
   );
