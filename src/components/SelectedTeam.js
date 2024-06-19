@@ -15,6 +15,7 @@ const SelectedTeam = () => {
   const [biddingStartTeamIndex, setBiddingStartTeamIndex] = useState(0);
   const [error, setError] = useState("");
   const [currentHighestBiddingTeamIndex, setCurrentHighestBiddingTeamIndex] = useState(null);
+  const [currentHighestBidPrice, setCurrentHighestBidPrice] = useState(0);
 
   useEffect(() => {
     fetchData();
@@ -94,7 +95,6 @@ const SelectedTeam = () => {
       .map((player) => (
         <tr key={player.id}>
           <td>{player.name}</td>
-         
           <td>{player.bidPrice}</td>
         </tr>
       ));
@@ -119,6 +119,7 @@ const colorCode = {"new":"black","unsold":"red","sold":"blue"}
   const handleBidSubmit = async (tempTeams) => {
     if (selectedPlayer && bidPrice) {
       setCurrentHighestBiddingTeamIndex(currentBiddingTeamIndex);
+      setCurrentHighestBidPrice(bidPrice);
       const remainingTeams = tempTeams.filter((team) => team.balance >= bidPrice);
   
       if (remainingTeams.length === 1) {
@@ -152,6 +153,7 @@ const colorCode = {"new":"black","unsold":"red","sold":"blue"}
         resetBid();
       } else {
         setCurrentBiddingTeamIndex((prevIndex) => (prevIndex + 1) % remainingTeams.length);
+        setBidPrice(currentHighestBidPrice + 100); // Set the next bid price
       }
     } else {
       setError("Please select all required fields.");
@@ -184,6 +186,7 @@ const colorCode = {"new":"black","unsold":"red","sold":"blue"}
         handleBidSubmit(newTeams);
       } else {
         setCurrentBiddingTeamIndex(nextTeamIndex);
+        setBidPrice(currentHighestBidPrice + 100); // Update bid price on pass
       }
     }
   };
@@ -214,8 +217,10 @@ const colorCode = {"new":"black","unsold":"red","sold":"blue"}
     setBiddingStartTeamIndex(teamsWithLessThan7Players.findIndex(team => team.id === initialTeams[0].id));
     
     setSelectedPlayer(player);
-    setBidPrice(grades[player.grade]?.price || 100);
-    setCurrentBiddingTeamIndex(biddingStartTeamIndex); 
+    const initialPrice = grades[player.grade]?.price || 100;
+    setBidPrice(initialPrice);
+    setCurrentHighestBidPrice(initialPrice - 100); // Set it lower initially to allow the first increment
+    setCurrentBiddingTeamIndex(biddingStartTeamIndex);
   };
   
   const resetBid = async (winningTeamId = null) => {
@@ -254,25 +259,35 @@ const colorCode = {"new":"black","unsold":"red","sold":"blue"}
               <p>Base Price: {grades[selectedPlayer.grade]?.price}</p>
             </>
           )}
-          <div>
-            <label>Bid Price: </label>
-            <select
-              value={bidPrice}
-              onChange={(e) => setBidPrice(Number(e.target.value))}
-              style={{ width: "75px" }}
-            >
-              {[...Array(49)].map((_, i) => {
-                const price = (i + 1) * 100;
-                return (
-                  price >= (grades[selectedPlayer?.grade]?.price || 100) && (
-                    <option key={i} value={price}>
-                      {price}
-                    </option>
-                  )
-                );
-              })}
-            </select>
-          </div>
+         <div>
+  <label>Bid Price: </label>
+  <select
+    value={bidPrice}
+    onChange={(e) => setBidPrice(Number(e.target.value))}
+    style={{ width: "75px" }}
+  >
+    {(() => {
+      const currentTeam = teams[currentBiddingTeamIndex];
+      if (!currentTeam) return null; // Ensure current team exists
+
+      const playerCount = currentTeam.playerCount || 0;
+      const maxBidPrice = currentTeam.balance - 100 * (6 - playerCount);
+      const startingBidPrice = currentHighestBidPrice + 100;
+
+      const options = [];
+      for (let price = startingBidPrice; price <= maxBidPrice; price += 100) {
+        options.push(
+          <option key={price} value={price}>
+            {price}
+          </option>
+        );
+      }
+
+      return options;
+    })()}
+  </select>
+</div>
+
           <div>
             <label>Current Bidding Team: </label>
             <input
@@ -302,12 +317,12 @@ const colorCode = {"new":"black","unsold":"red","sold":"blue"}
               <div className="budget">
                 <p>Budget: {team.budget}</p>
                 <p>Balance: {team.balance}</p>
+                {/* <p>Players: {team.playerCount}</p> */}
               </div>
               <table border="1">
                 <thead>
                   <tr>
-                    <th>Name</th>
-                  
+                    <th>Name</th>                    
                     <th>Auction Price</th>
                   </tr>
                 </thead>
