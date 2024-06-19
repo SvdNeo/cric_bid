@@ -317,7 +317,7 @@ const colorCode = {"new":"black","unsold":"red","sold":"blue"}
               <div className="budget">
                 <p>Budget: {team.budget}</p>
                 <p>Balance: {team.balance}</p>
-                <p>Players: {team.playerCount}</p>
+                {/* <p>Players: {team.playerCount}</p> */}
               </div>
               <table border="1">
                 <thead>
