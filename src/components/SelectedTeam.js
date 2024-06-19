@@ -14,41 +14,42 @@ const SelectedTeam = () => {
   const [currentBiddingTeamIndex, setCurrentBiddingTeamIndex] = useState(0);
   const [biddingStartTeamIndex, setBiddingStartTeamIndex] = useState(0);
   const [error, setError] = useState("");
-  const [currentHighestBiddingTeamIndex,setCurrentHighestBiddingTeamIndex]= useState(null)
+  const [currentHighestBiddingTeamIndex, setCurrentHighestBiddingTeamIndex] = useState(null);
 
   useEffect(() => {
     fetchData();
   }, []);
 
   const fetchData = async () => {
-    try {
-      const teamsSnapshot = await getDocs(collection(db, "teams"));
-      const teamsList = teamsSnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      setInitialTeams(teamsList);
-      setTeams(teamsList);
+  try {
+    const teamsSnapshot = await getDocs(collection(db, "teams"));
+    const teamsList = teamsSnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+    setInitialTeams(teamsList);
+    setTeams(teamsList);
 
-      const gradesSnapshot = await getDocs(collection(db, "grade"));
-      const gradesList = {};
-      gradesSnapshot.forEach(doc => {
-        const gradeData = doc.data();
-        gradesList[gradeData.name] = { price: gradeData.price };
-      });
-      setGrades(gradesList);
+    const gradesSnapshot = await getDocs(collection(db, "grade"));
+    const gradesList = {};
+    gradesSnapshot.forEach((doc) => {
+      const gradeData = doc.data();
+      gradesList[gradeData.name] = { price: gradeData.price };
+    });
+    setGrades(gradesList);
 
-      const playersSnapshot = await getDocs(collection(db, "players"));
-      const playersList = playersSnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      setInitialPlayers(playersList);
-      setPlayers(playersList);
-    } catch (error) {
-      setError("Failed to fetch data. Please try again.");
-    }
-  };
+    const playersSnapshot = await getDocs(collection(db, "players"));
+    const playersList = playersSnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+  
+    setInitialPlayers(playersList);
+    setPlayers(playersList);
+  } catch (error) {
+    setError("Failed to fetch data. Please try again.");
+  }
+};
 
   const fetchTeams = async () => {
     try {
@@ -76,7 +77,7 @@ const SelectedTeam = () => {
       const playersSnapshot = await getDocs(collection(db, "players"));
       playersSnapshot.forEach((doc) => {
         const playerRef = doc.ref;
-        batch.update(playerRef, { status: "new", teamId: "" });
+        batch.update(playerRef, { status: "new", teamId: "",teamName:"",bidPrice:null});
       });
 
       await batch.commit();
@@ -93,63 +94,57 @@ const SelectedTeam = () => {
       .map((player) => (
         <tr key={player.id}>
           <td>{player.name}</td>
-          <td>{player.grade}</td>
+         
+          <td>{player.bidPrice}</td>
         </tr>
       ));
   };
-
+const colorCode = {"new":"black","unsold":"red","sold":"blue"}
   const renderPlayersByGrade = (grade) => {
     return initialPlayers
-      .filter((player) => player.grade === grade)
+      .filter((player) => player.grade === grade && player.status !== "sold")
       .map((player) => (
         <li
           key={player.id}
           style={{
-            color: player.status === "new" ? "black" : player.status === "sold" ? "blue" : "red"
+            color: colorCode[player.status],
           }}
         >
           {player.name}
         </li>
       ));
   };
+  
 
   const handleBidSubmit = async (tempTeams) => {
     if (selectedPlayer && bidPrice) {
       setCurrentHighestBiddingTeamIndex(currentBiddingTeamIndex);
       const remainingTeams = tempTeams.filter((team) => team.balance >= bidPrice);
-
+  
       if (remainingTeams.length === 1) {
         const winningTeam = remainingTeams[0];
         const updatedPlayer = {
-          ...selectedPlayer,
-          price: bidPrice,
+         ...selectedPlayer,
+          bidPrice,
+          teamName:winningTeam.teamname,
           teamId: winningTeam.id,
           status: "sold",
         };
-
+  
         const playerDoc = doc(db, "players", selectedPlayer.id);
         await updateDoc(playerDoc, updatedPlayer);
-
+  
         const updatedTeam = {
-          ...winningTeam,
+         ...winningTeam,
           balance: winningTeam.balance - bidPrice,
         };
-
+  
         const teamDoc = doc(db, "teams", winningTeam.id);
         await updateDoc(teamDoc, updatedTeam);
-
-        setPlayers((prevPlayers) =>
-          prevPlayers.map((player) =>
-            player.id === selectedPlayer.id ? updatedPlayer : player
-          )
-        );
-
-        setTeams((prevTeams) =>
-          prevTeams.map((team) =>
-            team.id === winningTeam.id ? updatedTeam : team
-          )
-        );
-
+  
+        
+        fetchData(); 
+  
         resetBid();
       } else {
         setCurrentBiddingTeamIndex((prevIndex) => (prevIndex + 1) % remainingTeams.length);
@@ -162,32 +157,27 @@ const SelectedTeam = () => {
 
   const handleBidPass = () => {
     const newTeams = teams.filter((_, index) => index !== currentBiddingTeamIndex);
-    setTeams([...newTeams])
+    setTeams([...newTeams]);
     if (currentHighestBiddingTeamIndex === null && newTeams.length === 0) {
       console.log("Player unsold");
-      resetBid()
-      return
-    } 
+      resetBid();
+      return;
+    }
     if (newTeams.length === 1 && currentHighestBiddingTeamIndex !== null) {
-     
       handleBidSubmit(newTeams);
     } else {
-      const nextTeamIndex = currentBiddingTeamIndex  % newTeams.length;
-      if(nextTeamIndex === currentHighestBiddingTeamIndex){
+      const nextTeamIndex = (currentBiddingTeamIndex) % newTeams.length;
+      if (nextTeamIndex === currentHighestBiddingTeamIndex) {
         handleBidSubmit(newTeams);
-      }else{
+      } else {
         setCurrentBiddingTeamIndex(nextTeamIndex);
-  
       }
-     
-     
     }
   };
   
-
   const handleBidStart = () => {
     const availablePlayers = players.filter(player => player.status !== "sold");
-    setTeams(initialTeams)
+    setTeams(initialTeams);
     if (availablePlayers.length === 0) {
       setError("No players available for bidding.");
       return;
@@ -196,19 +186,31 @@ const SelectedTeam = () => {
     const player = availablePlayers[randomPlayerIndex];
     setSelectedPlayer(player);
     setBidPrice(grades[player.grade]?.price || 100);
-    // setCurrentBiddingTeamIndex(biddingStartTeamIndex);
+    setCurrentBiddingTeamIndex(biddingStartTeamIndex); // Set to biddingStartTeamIndex
   };
 
-  const resetBid = () => {
+  const resetBid = (winningTeamId = null) => {
     const newPlayers = players.filter((player) => player.id !== selectedPlayer.id);
     setPlayers(newPlayers);
-    setTeams(initialTeams)
+    setTeams(initialTeams);
     setSelectedPlayer(null);
     setBidPrice(100);
-    setBiddingStartTeamIndex((biddingStartTeamIndex + 1) % initialTeams.length);
-    setCurrentBiddingTeamIndex((biddingStartTeamIndex + 1) % initialTeams.length);
-
+  
+    
+    if (winningTeamId !== null) {
+      setBiddingStartTeamIndex(initialTeams.findIndex((team) => team.id === winningTeamId));
+    } else if (currentHighestBiddingTeamIndex !== null) {
+      setBiddingStartTeamIndex(currentHighestBiddingTeamIndex);
+    } 
+      setBiddingStartTeamIndex((biddingStartTeamIndex + 1) % initialTeams.length);
+    
+  
+    setCurrentBiddingTeamIndex(biddingStartTeamIndex);
+    setCurrentHighestBiddingTeamIndex(null);
+    fetchData();
   };
+  
+  
 
   const gradeOrder = ["A", "B", "C", "D", "E", "F", "G"];
 
@@ -280,7 +282,8 @@ const SelectedTeam = () => {
                 <thead>
                   <tr>
                     <th>Name</th>
-                    <th>Grade</th>
+                  
+                    <th>Auction Price</th>
                   </tr>
                 </thead>
                 <tbody>{renderPlayers(team.id)}</tbody>
