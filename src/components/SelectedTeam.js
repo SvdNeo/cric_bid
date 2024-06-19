@@ -95,7 +95,6 @@ const SelectedTeam = () => {
       .map((player) => (
         <tr key={player.id}>
           <td>{player.name}</td>
-          <td>{player.grade}</td>
           <td>{player.bidPrice}</td>
         </tr>
       ));
@@ -323,8 +322,7 @@ const colorCode = {"new":"black","unsold":"red","sold":"blue"}
               <table border="1">
                 <thead>
                   <tr>
-                    <th>Name</th>
-                    <th>Grade</th>
+                    <th>Name</th>                    
                     <th>Auction Price</th>
                   </tr>
                 </thead>
