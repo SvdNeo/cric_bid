@@ -116,48 +116,48 @@ const colorCode = {"new":"black","unsold":"red","sold":"blue"}
   };
   
 
-  const handleBidSubmit = async (tempTeams) => {
-    if (selectedPlayer && bidPrice) {
-      setCurrentHighestBiddingTeamIndex(currentBiddingTeamIndex);
-      const remainingTeams = tempTeams.filter((team) => team.balance >= bidPrice);
-  
-      if (remainingTeams.length === 1) {
-        const winningTeam = remainingTeams[0];
-        const playersOnWinningTeam = players.filter((player) => player.teamId === winningTeam.id);
-        if (playersOnWinningTeam.length >= 7) {
-          setError("Team already has 7 players. Cannot add more.");
-          return;
-        }
-  
-        const updatedPlayer = {
-         ...selectedPlayer,
-          bidPrice,
-          teamName: winningTeam.teamname,
-          teamId: winningTeam.id,
-          status: "sold",
-        };
-  
-        const playerDoc = doc(db, "players", selectedPlayer.id);
-        await updateDoc(playerDoc, updatedPlayer);
-  
-        const updatedTeam = {
-         ...winningTeam,
-          balance: winningTeam.balance - bidPrice,
-        };
-  
-        const teamDoc = doc(db, "teams", winningTeam.id);
-        await updateDoc(teamDoc, updatedTeam);
-  
-        fetchData();
-        resetBid();
-      } else {
-        setCurrentBiddingTeamIndex((prevIndex) => (prevIndex + 1) % remainingTeams.length);
+ const handleBidSubmit = async (tempTeams) => {
+  if (selectedPlayer && bidPrice) {
+    setCurrentHighestBiddingTeamIndex(currentBiddingTeamIndex);
+    const remainingTeams = tempTeams.filter((team) => team.balance >= bidPrice);
+
+    if (remainingTeams.length === 1) {
+      const winningTeam = remainingTeams[0];
+      const playersOnWinningTeam = players.filter((player) => player.teamId === winningTeam.id);
+      if (playersOnWinningTeam.length >= 7) {
+        setError("Team already has 7 players. Cannot add more.");
+        return;
       }
+
+      const updatedPlayer = {
+       ...selectedPlayer,
+        bidPrice,
+        teamName: winningTeam.teamname,
+        teamId: winningTeam.id,
+        status: "sold",
+      };
+
+      const playerDoc = doc(db, "players", selectedPlayer.id);
+      await updateDoc(playerDoc, updatedPlayer);
+
+      const updatedTeam = {
+       ...winningTeam,
+        balance: winningTeam.balance - bidPrice,
+      };
+
+      const teamDoc = doc(db, "teams", winningTeam.id);
+      await updateDoc(teamDoc, updatedTeam);
+
+      fetchData();
+      resetBid();
     } else {
-      setError("Please select all required fields.");
-      setTimeout(() => setError(""), 3000);
+      setCurrentBiddingTeamIndex((prevIndex) => (prevIndex + 1) % remainingTeams.length);
     }
-  };
+  } else {
+    setError("Please select all required fields.");
+    setTimeout(() => setError(""), 3000);
+  }
+};
   const handleBidPass = async () => {
     const newTeams = teams.filter((_, index) => index !== currentBiddingTeamIndex);
     setTeams([...newTeams]);
@@ -197,7 +197,7 @@ const colorCode = {"new":"black","unsold":"red","sold":"blue"}
       setError("No players available for bidding.");
       return;
     }
-    
+  
     let player;
     // Prioritize players who haven't been bid on
     if (availablePlayers.length > unsoldPlayers.length) {
@@ -205,14 +205,7 @@ const colorCode = {"new":"black","unsold":"red","sold":"blue"}
     } else {
       player = availablePlayers[0];
     }
-    
-    const teamsWithLessThan7Players = initialTeams.filter(team => {
-      const playersOnTeam = players.filter(player => player.teamId === team.id);
-      return playersOnTeam.length < 7;
-    });
-    
-    setBiddingStartTeamIndex(teamsWithLessThan7Players.findIndex(team => team.id === initialTeams[0].id));
-    
+  
     setSelectedPlayer(player);
     setBidPrice(grades[player.grade]?.price || 100);
     setCurrentBiddingTeamIndex(biddingStartTeamIndex); 
