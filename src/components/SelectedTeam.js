@@ -155,11 +155,21 @@ const colorCode = {"new":"black","unsold":"red","sold":"blue"}
     }
   };
 
-  const handleBidPass = () => {
+  const handleBidPass = async () => {
     const newTeams = teams.filter((_, index) => index !== currentBiddingTeamIndex);
     setTeams([...newTeams]);
     if (currentHighestBiddingTeamIndex === null && newTeams.length === 0) {
       console.log("Player unsold");
+      if (selectedPlayer) {
+        // Update the player's status to "unsold" locally and in the database
+        const updatedPlayer = { ...selectedPlayer, status: "unsold" };
+        const playerDoc = doc(db, "players", selectedPlayer.id);
+        await updateDoc(playerDoc, { status: "unsold" });
+        
+        // Update local state
+        setPlayers(players.map(player => player.id === selectedPlayer.id ? updatedPlayer : player));
+        setInitialPlayers(initialPlayers.map(player => player.id === selectedPlayer.id ? updatedPlayer : player));
+      }
       resetBid();
       return;
     }
@@ -175,27 +185,35 @@ const colorCode = {"new":"black","unsold":"red","sold":"blue"}
     }
   };
   
+  
   const handleBidStart = () => {
     const availablePlayers = players.filter(player => player.status !== "sold");
-    setTeams(initialTeams);
+    const unsoldPlayers = players.filter(player => player.status === "unsold");
+    
     if (availablePlayers.length === 0) {
       setError("No players available for bidding.");
       return;
     }
-    const randomPlayerIndex = Math.floor(Math.random() * availablePlayers.length);
-    const player = availablePlayers[randomPlayerIndex];
+  
+    let player;
+    // Prioritize players who haven't been bid on
+    if (availablePlayers.length > unsoldPlayers.length) {
+      player = availablePlayers.filter(player => player.status !== "unsold")[0];
+    } else {
+      player = availablePlayers[0];
+    }
+  
     setSelectedPlayer(player);
     setBidPrice(grades[player.grade]?.price || 100);
-    setCurrentBiddingTeamIndex(biddingStartTeamIndex); // Set to biddingStartTeamIndex
+    setCurrentBiddingTeamIndex(biddingStartTeamIndex); 
   };
-
-  const resetBid = (winningTeamId = null) => {
-    const newPlayers = players.filter((player) => player.id !== selectedPlayer.id);
+  
+  const resetBid = async (winningTeamId = null) => {
+    const newPlayers = players.filter((player) => player.id !== selectedPlayer?.id);
     setPlayers(newPlayers);
     setTeams(initialTeams);
     setSelectedPlayer(null);
     setBidPrice(100);
-  
     
     if (winningTeamId !== null) {
       setBiddingStartTeamIndex(initialTeams.findIndex((team) => team.id === winningTeamId));
@@ -204,14 +222,11 @@ const colorCode = {"new":"black","unsold":"red","sold":"blue"}
     } 
       setBiddingStartTeamIndex((biddingStartTeamIndex + 1) % initialTeams.length);
     
-  
     setCurrentBiddingTeamIndex(biddingStartTeamIndex);
     setCurrentHighestBiddingTeamIndex(null);
-    fetchData();
+    await fetchData(); // Ensure data is fetched after reset
   };
   
-  
-
   const gradeOrder = ["A", "B", "C", "D", "E", "F", "G"];
 
   return (
