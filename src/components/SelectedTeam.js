@@ -14,7 +14,8 @@ const SelectedTeam = () => {
   const [currentBiddingTeamIndex, setCurrentBiddingTeamIndex] = useState(0);
   const [biddingStartTeamIndex, setBiddingStartTeamIndex] = useState(0);
   const [error, setError] = useState("");
-  const [currentHighestBiddingTeamIndex,setCurrentHighestBiddingTeamIndex]= useState(null)
+  const [currentHighestBiddingTeamIndex, setCurrentHighestBiddingTeamIndex] = useState(null);
+  const [currentHighestBidPrice, setCurrentHighestBidPrice] = useState(0);
 
   useEffect(() => {
     fetchData();
@@ -27,8 +28,6 @@ const SelectedTeam = () => {
         id: doc.id,
         ...doc.data(),
       }));
-      setInitialTeams(teamsList);
-      setTeams(teamsList);
 
       const gradesSnapshot = await getDocs(collection(db, "grade"));
       const gradesList = {};
@@ -36,13 +35,28 @@ const SelectedTeam = () => {
         const gradeData = doc.data();
         gradesList[gradeData.name] = { price: gradeData.price };
       });
-      setGrades(gradesList);
 
       const playersSnapshot = await getDocs(collection(db, "players"));
       const playersList = playersSnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       }));
+
+      // Count players for each team
+      const playerCounts = teamsList.reduce((acc, team) => {
+        acc[team.id] = playersList.filter(player => player.teamId === team.id).length;
+        return acc;
+      }, {});
+
+      // Add player counts to teams
+      const updatedTeamsList = teamsList.map(team => ({
+        ...team,
+        playerCount: playerCounts[team.id] || 0,
+      }));
+
+      setInitialTeams(updatedTeamsList);
+      setTeams(updatedTeamsList);
+      setGrades(gradesList);
       setInitialPlayers(playersList);
       setPlayers(playersList);
     } catch (error) {
@@ -116,6 +130,7 @@ const SelectedTeam = () => {
   const handleBidSubmit = async (tempTeams) => {
     if (selectedPlayer && bidPrice) {
       setCurrentHighestBiddingTeamIndex(currentBiddingTeamIndex);
+      setCurrentHighestBidPrice(bidPrice);
       const remainingTeams = tempTeams.filter((team) => team.balance >= bidPrice);
 
       if (remainingTeams.length === 1) {
@@ -153,6 +168,7 @@ const SelectedTeam = () => {
         resetBid();
       } else {
         setCurrentBiddingTeamIndex((prevIndex) => (prevIndex + 1) % remainingTeams.length);
+        setBidPrice(currentHighestBidPrice + 100); // Set the next bid price
       }
     } else {
       setError("Please select all required fields.");
@@ -162,32 +178,28 @@ const SelectedTeam = () => {
 
   const handleBidPass = () => {
     const newTeams = teams.filter((_, index) => index !== currentBiddingTeamIndex);
-    setTeams([...newTeams])
+    setTeams([...newTeams]);
     if (currentHighestBiddingTeamIndex === null && newTeams.length === 0) {
       console.log("Player unsold");
-      resetBid()
-      return
-    } 
+      resetBid();
+      return;
+    }
     if (newTeams.length === 1 && currentHighestBiddingTeamIndex !== null) {
-     
       handleBidSubmit(newTeams);
     } else {
-      const nextTeamIndex = currentBiddingTeamIndex  % newTeams.length;
-      if(nextTeamIndex === currentHighestBiddingTeamIndex){
+      const nextTeamIndex = currentBiddingTeamIndex % newTeams.length;
+      if (nextTeamIndex === currentHighestBiddingTeamIndex) {
         handleBidSubmit(newTeams);
-      }else{
+      } else {
         setCurrentBiddingTeamIndex(nextTeamIndex);
-  
+        setBidPrice(currentHighestBidPrice + 100); // Update bid price on pass
       }
-     
-     
     }
   };
-  
 
   const handleBidStart = () => {
     const availablePlayers = players.filter(player => player.status !== "sold");
-    setTeams(initialTeams)
+    setTeams(initialTeams);
     if (availablePlayers.length === 0) {
       setError("No players available for bidding.");
       return;
@@ -195,19 +207,22 @@ const SelectedTeam = () => {
     const randomPlayerIndex = Math.floor(Math.random() * availablePlayers.length);
     const player = availablePlayers[randomPlayerIndex];
     setSelectedPlayer(player);
-    setBidPrice(grades[player.grade]?.price || 100);
-    // setCurrentBiddingTeamIndex(biddingStartTeamIndex);
+    const initialPrice = grades[player.grade]?.price || 100;
+    setBidPrice(initialPrice);
+    setCurrentHighestBidPrice(initialPrice - 100); // Set it lower initially to allow the first increment
+    setCurrentBiddingTeamIndex(biddingStartTeamIndex);
   };
 
   const resetBid = () => {
     const newPlayers = players.filter((player) => player.id !== selectedPlayer.id);
     setPlayers(newPlayers);
-    setTeams(initialTeams)
+    setTeams(initialTeams);
     setSelectedPlayer(null);
     setBidPrice(100);
     setBiddingStartTeamIndex((biddingStartTeamIndex + 1) % initialTeams.length);
     setCurrentBiddingTeamIndex((biddingStartTeamIndex + 1) % initialTeams.length);
-
+    setCurrentHighestBidPrice(0);
+    setCurrentHighestBiddingTeamIndex(null);
   };
 
   const gradeOrder = ["A", "B", "C", "D", "E", "F", "G"];
@@ -227,25 +242,35 @@ const SelectedTeam = () => {
               <p>Base Price: {grades[selectedPlayer.grade]?.price}</p>
             </>
           )}
-          <div>
-            <label>Bid Price: </label>
-            <select
-              value={bidPrice}
-              onChange={(e) => setBidPrice(Number(e.target.value))}
-              style={{ width: "75px" }}
-            >
-              {[...Array(49)].map((_, i) => {
-                const price = (i + 1) * 100;
-                return (
-                  price >= (grades[selectedPlayer?.grade]?.price || 100) && (
-                    <option key={i} value={price}>
-                      {price}
-                    </option>
-                  )
-                );
-              })}
-            </select>
-          </div>
+         <div>
+  <label>Bid Price: </label>
+  <select
+    value={bidPrice}
+    onChange={(e) => setBidPrice(Number(e.target.value))}
+    style={{ width: "75px" }}
+  >
+    {(() => {
+      const currentTeam = teams[currentBiddingTeamIndex];
+      if (!currentTeam) return null; // Ensure current team exists
+
+      const playerCount = currentTeam.playerCount || 0;
+      const maxBidPrice = currentTeam.balance - 100 * (6 - playerCount);
+      const startingBidPrice = currentHighestBidPrice + 100;
+
+      const options = [];
+      for (let price = startingBidPrice; price <= maxBidPrice; price += 100) {
+        options.push(
+          <option key={price} value={price}>
+            {price}
+          </option>
+        );
+      }
+
+      return options;
+    })()}
+  </select>
+</div>
+
           <div>
             <label>Current Bidding Team: </label>
             <input
@@ -275,6 +300,7 @@ const SelectedTeam = () => {
               <div className="budget">
                 <p>Budget: {team.budget}</p>
                 <p>Balance: {team.balance}</p>
+                <p>Players: {team.playerCount}</p>
               </div>
               <table border="1">
                 <thead>
