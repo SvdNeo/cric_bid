@@ -16,7 +16,7 @@ const SelectedTeam = () => {
   const [initialPlayers, setInitialPlayers] = useState([]);
   const [players, setPlayers] = useState([]);
   const [selectedPlayer, setSelectedPlayer] = useState(null);
-  const [bidPrice, setBidPrice] = useState(100);
+  const [bidPrice, setBidPrice] = useState();
   const [currentBiddingTeamIndex, setCurrentBiddingTeamIndex] = useState(0);
   const [biddingStartTeamIndex, setBiddingStartTeamIndex] = useState(0);
   const [error, setError] = useState("");
@@ -36,7 +36,7 @@ const SelectedTeam = () => {
         ...doc.data(),
       }));
       setInitialTeams(teamsList);
-      setTeams(teamsList);
+      setTeams(teamsList.filter(team => team.playerCount !== undefined && team.playerCount < 7));
 
       const gradesSnapshot = await getDocs(collection(db, "grade"));
       const gradesList = {};
@@ -79,7 +79,7 @@ const SelectedTeam = () => {
       teams.forEach((team) => {
         if (team && team.id) {
           const teamRef = doc(db, "teams", team.id);
-          batch.update(teamRef, { balance: 10000 });
+          batch.update(teamRef, { balance: 10000, playerCount: 0 });
         } else {
           throw new Error(`Invalid team data: ${JSON.stringify(team)}`);
         }
@@ -162,6 +162,7 @@ const SelectedTeam = () => {
         const updatedTeam = {
           ...winningTeam,
           balance: winningTeam.balance - bidPrice,
+          playerCount: winningTeam.playerCount ? winningTeam.playerCount + 1 : 1
         };
 
         const teamDoc = doc(db, "teams", winningTeam.id);
@@ -229,15 +230,19 @@ const SelectedTeam = () => {
       (player) => player.status === "unsold"
     );
 
-    if (availablePlayers.length === 0) {
+    if (availablePlayers === 0 && unsoldPlayers === 0) {
       setError("No players available for bidding.");
       return;
     }
+    // if (availablePlayers.length === 0) {
+    //   setError("No players available for bidding.");
+    //   return;
+    // }
 
     let player;
     // Prioritize players who haven't been bid on
-    if (availablePlayers.length > unsoldPlayers.length) {
-      player = availablePlayers.filter(
+    if (availablePlayers.length === 0 && unsoldPlayers.length > 0) {
+      player = unsoldPlayers.filter(
         (player) => player.status !== "unsold"
       )[0];
     } else {
@@ -256,19 +261,20 @@ const SelectedTeam = () => {
       (player) => player.id !== selectedPlayer?.id
     );
     setPlayers(newPlayers);
-    setTeams(initialTeams);
+    setTeams(initialTeams.filter(team => team.playerCount !== undefined && team.playerCount < 7));
+
     setSelectedPlayer(null);
     setBidPrice(100);
 
-    if (winningTeamId !== null) {
-      setBiddingStartTeamIndex(
-        initialTeams.findIndex((team) => team.id === winningTeamId)
-      );
-    } else if (currentHighestBiddingTeamIndex !== null) {
-      setBiddingStartTeamIndex(currentHighestBiddingTeamIndex);
-    }
-    setBiddingStartTeamIndex((biddingStartTeamIndex + 1) % initialTeams.length);
-
+    // if (winningTeamId !== null) {
+    //   setBiddingStartTeamIndex(
+    //     initialTeams.findIndex((team) => team.id === winningTeamId)
+    //   );
+    // } else if (currentHighestBiddingTeamIndex !== null) {
+    //   setBiddingStartTeamIndex(currentHighestBiddingTeamIndex);
+    // }
+    let currentBidTeamLength = (initialTeams.filter(team => team.playerCount !== undefined && team.playerCount < 7)).length;
+    setBiddingStartTeamIndex((biddingStartTeamIndex + 1) % currentBidTeamLength);
     setCurrentBiddingTeamIndex(biddingStartTeamIndex);
     setCurrentHighestBiddingTeamIndex(null);
     await fetchData(); // Ensure data is fetched after reset
@@ -277,122 +283,125 @@ const SelectedTeam = () => {
   const gradeOrder = ["A", "B", "C", "D", "E", "F", "G"];
 
   return (
-    <div className="selected-team-container">
+    <>
       {error && <div className="error-popup">{error}</div>}
+      <div className="selected-team-container">
 
-      {/* Bidding Area */}
-      <div className="bidding-area">
-        <h2 className="bidding-title">Bidding Area</h2>
-        <div className="bidding-form">
-          {selectedPlayer && (
-            <>
-              <h2>{selectedPlayer.name}</h2>
-              <p>Grade: {selectedPlayer.grade}</p>
-              <p>Base Price: {grades[selectedPlayer.grade]?.price}</p>
-            </>
-          )}
-          <div>
-            <label>Bid Price: </label>
-            <select
-              value={bidPrice}
-              onChange={(e) => setBidPrice(Number(e.target.value))}
-              style={{ width: "75px" }}
+
+        {/* Bidding Area */}
+        <div className="bidding-area">
+          <h2 className="bidding-title">Bidding Area</h2>
+          <div className="bidding-form">
+            {selectedPlayer && (
+              <>
+                <h2>{selectedPlayer.name}</h2>
+                <p>Grade: {selectedPlayer.grade}</p>
+                <p>Base Price: {grades[selectedPlayer.grade]?.price}</p>
+              </>
+            )}
+            <div>
+              <label>Bid Price: </label>
+              <select
+                value={bidPrice}
+                onChange={(e) => setBidPrice(Number(e.target.value))}
+                style={{ width: "75px" }}
+              >
+                {(() => {
+                  const currentTeam = teams[currentBiddingTeamIndex];
+                  if (!currentTeam) return null; // Ensure current team exists
+
+                  const playerCount = currentTeam.playerCount || 0;
+                  const maxBidPrice =
+                    currentTeam.balance - 100 * (6 - playerCount);
+                  const startingBidPrice = currentHighestBidPrice + 100;
+
+                  const options = [];
+                  for (
+                    let price = startingBidPrice;
+                    price <= maxBidPrice;
+                    price += 100
+                  ) {
+                    options.push(
+                      <option key={price} value={price}>
+                        {price}
+                      </option>
+                    );
+                  }
+
+                  return options;
+                })()}
+              </select>
+            </div>
+
+            <div>
+              <label>Current Bidding Team: </label>
+              <input
+                type="text"
+                id="current-team"
+                className="small-input"
+                value={teams[currentBiddingTeamIndex]?.teamname || ""}
+                readOnly
+              />
+            </div>
+            <button onClick={handleBidStart}>Start Bid</button>
+            <button
+              onClick={() => handleBidSubmit(teams)}
+              disabled={!selectedPlayer}
             >
-              {(() => {
-                const currentTeam = teams[currentBiddingTeamIndex];
-                if (!currentTeam) return null; // Ensure current team exists
-
-                const playerCount = currentTeam.playerCount || 0;
-                const maxBidPrice =
-                  currentTeam.balance - 100 * (6 - playerCount);
-                const startingBidPrice = currentHighestBidPrice + 100;
-
-                const options = [];
-                for (
-                  let price = startingBidPrice;
-                  price <= maxBidPrice;
-                  price += 100
-                ) {
-                  options.push(
-                    <option key={price} value={price}>
-                      {price}
-                    </option>
-                  );
-                }
-
-                return options;
-              })()}
-            </select>
+              Submit Bid
+            </button>
+            <button onClick={handleBidPass} disabled={!selectedPlayer}>
+              Pass
+            </button>
           </div>
+        </div>
 
-          <div>
-            <label>Current Bidding Team: </label>
-            <input
-              type="text"
-              id="current-team"
-              className="small-input"
-              value={teams[currentBiddingTeamIndex]?.teamname || ""}
-              readOnly
-            />
+        {/* Teams Section */}
+        <div className="teams-container">
+          <div className="reset">
+            <h2>Teams</h2>
+            <button className="btn-reset" onClick={resetTeams}>
+              Reset
+            </button>
           </div>
-          <button onClick={handleBidStart}>Start Bid</button>
-          <button
-            onClick={() => handleBidSubmit(teams)}
-            disabled={!selectedPlayer}
-          >
-            Submit Bid
-          </button>
-          <button onClick={handleBidPass} disabled={!selectedPlayer}>
-            Pass
-          </button>
-        </div>
-      </div>
-
-      {/* Teams Section */}
-      <div className="teams-container">
-        <div className="reset">
-          <h2>Teams</h2>
-          <button className="btn-reset" onClick={resetTeams}>
-            Reset
-          </button>
-        </div>
-        <div className="teams">
-          {initialTeams.map((team) => (
-            <div className="team" key={team.id}>
-              <h3 style={{ textAlign: "center" }}>{team.teamname}</h3>
-              <div className="budget">
-                <p>Budget: {team.budget}</p>
-                <p>Balance: {team.balance}</p>
-                {/* <p>Players: {team.playerCount}</p> */}
+          <div className="teams">
+            {initialTeams.map((team) => (
+              <div className="team" key={team.id}>
+                <h3 style={{ textAlign: "center" }}>{team.teamname}</h3>
+                <div className="budget">
+                  <p>Budget: {team.budget}</p>
+                  <p>Balance: {team.balance}</p>
+                  {/* <p>Players: {team.playerCount}</p> */}
+                </div>
+                <table border="1">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Auction Price</th>
+                    </tr>
+                  </thead>
+                  <tbody>{renderPlayers(team.id)}</tbody>
+                </table>
               </div>
-              <table border="1">
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Auction Price</th>
-                  </tr>
-                </thead>
-                <tbody>{renderPlayers(team.id)}</tbody>
-              </table>
-            </div>
-          ))}
+            ))}
+          </div>
+        </div>
+
+        {/* Grades Section */}
+        <div className="grades-container">
+          {gradeOrder
+            .filter((grade) => grades[grade]) // Ensure only existing grades are rendered
+            .map((grade) => (
+              <div className="grade-section" key={grade}>
+                <h3>
+                  Grade {grade} ({grades[grade].price})
+                </h3>
+                <ul>{renderPlayersByGrade(grade)}</ul>
+              </div>
+            ))}
         </div>
       </div>
-
-      {/* Grades Section */}
-      <div className="grades-container">
-        {gradeOrder
-          .filter((grade) => grades[grade]) // Ensure only existing grades are rendered
-          .map((grade) => (
-            <div className="grade-section" key={grade}>
-              <h3>
-                Grade {grade} ({grades[grade].price})
-              </h3>
-              <ul>{renderPlayersByGrade(grade)}</ul>
-            </div>
-          ))}
-      </div>
-    </div>
+    </>
   );
 };
 
