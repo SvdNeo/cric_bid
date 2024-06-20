@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Route, Link, Routes, Navigate } from 'react-ro
 import './App.css';
 import PlayerManager from './components/PlayerManager';
 import SelectedTeam from './components/SelectedTeam';
-import Login from './components/Login';
+
 
 const Header = ({ isAuthenticated, handleLogout, onResetTeams }) => {
   return (
@@ -35,9 +35,7 @@ const Header = ({ isAuthenticated, handleLogout, onResetTeams }) => {
   );
 };
 
-const PrivateRoute = ({ element: Element, isAuthenticated, ...rest }) => {
-  return isAuthenticated ? <Element {...rest} /> : <Navigate to="/login" />;
-};
+
 
 const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -50,10 +48,7 @@ const App = () => {
     }
   }, []);
 
-  const handleLogin = (user) => {
-    localStorage.setItem("user", JSON.stringify(user));
-    setIsAuthenticated(true);
-  };
+  
 
   const handleLogout = () => {
     localStorage.removeItem("user");
@@ -71,7 +66,7 @@ const App = () => {
       <div>
         <Header isAuthenticated={isAuthenticated} handleLogout={handleLogout} onResetTeams={handleResetTeams} />
         <Routes>
-          <Route path="/login" element={<Login handleLogin={handleLogin} />} />
+         
           <Route
             path="/"
             element={
