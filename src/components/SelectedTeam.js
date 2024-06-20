@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState,forwardRef,useImperativeHandle } from "react";
 import { db } from "../firebase_config";
 import {
   collection,
@@ -9,7 +9,7 @@ import {
 } from "firebase/firestore";
 import "./SelectedTeam.css";
 
-const SelectedTeam = () => {
+const SelectedTeam = forwardRef((props, ref) => {
   const [initialTeams, setInitialTeams] = useState([]);
   const [teams, setTeams] = useState([]);
   const [grades, setGrades] = useState({});
@@ -107,7 +107,9 @@ const SelectedTeam = () => {
       setError("Failed to reset teams and players. Please try again.");
     }
   };
-
+  useImperativeHandle(ref, () => ({
+    resetTeams,
+  }));
   const renderPlayers = (teamId) => {
     return initialPlayers
       .filter((player) => player.teamId === teamId)
@@ -366,9 +368,8 @@ const SelectedTeam = () => {
         <div className="teams-container">
           <div className="reset">
             <h2>Teams</h2>
-            <button className="btn-reset" onClick={resetTeams}>
-              Reset
-            </button>
+           
+             
           </div>
           <div className="teams">
             {initialTeams.map((team) => (
@@ -409,6 +410,7 @@ const SelectedTeam = () => {
       </div>
     </>
   );
-};
+});
 
 export default SelectedTeam;
+
