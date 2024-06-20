@@ -166,7 +166,12 @@ const SelectedTeam = () => {
           balance: winningTeam.balance - currentBidPrice,
           playerCount: winningTeam.playerCount ? winningTeam.playerCount + 1 : 1
         };
-
+        setInitialTeams(initialTeams.map(initialTeam => {
+          if (initialTeam.id === winningTeam.id) {
+            initialTeam.playerCount = winningTeam.playerCount;
+          }
+          return initialTeam;
+        }));
         const teamDoc = doc(db, "teams", winningTeam.id);
         await updateDoc(teamDoc, updatedTeam);
         setPopupMessage(`  ${winningTeam.teamname} has won  the bid for ${selectedPlayer.name} for a Auction Price of Rs:${currentHighestBidPrice || currentBidPrice}`);
