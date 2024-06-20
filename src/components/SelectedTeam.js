@@ -22,7 +22,7 @@ const SelectedTeam = () => {
   const [error, setError] = useState("");
   const [currentHighestBiddingTeamIndex, setCurrentHighestBiddingTeamIndex] =
     useState(null);
-  const [currentHighestBidPrice, setCurrentHighestBidPrice] = useState(0);
+  const [currentHighestBidPrice, setCurrentHighestBidPrice] = useState(null);
   const [initialPrice, setInitialPrice] = useState(0);
   const [popupMessage, setPopupMessage] = useState("");
 
@@ -149,9 +149,10 @@ const SelectedTeam = () => {
           return;
         }
 
+        const currentBidPrice = currentHighestBidPrice || bidPrice;
         const updatedPlayer = {
           ...selectedPlayer,
-          bidPrice: currentHighestBidPrice,
+          bidPrice: currentBidPrice,
           teamName: winningTeam.teamname,
           teamId: winningTeam.id,
           status: "sold",
@@ -162,13 +163,13 @@ const SelectedTeam = () => {
 
         const updatedTeam = {
           ...winningTeam,
-          balance: winningTeam.balance - currentHighestBidPrice - (100 * (winningTeam.playerCount || 0)),
+          balance: winningTeam.balance - currentBidPrice,
           playerCount: winningTeam.playerCount ? winningTeam.playerCount + 1 : 1
         };
 
         const teamDoc = doc(db, "teams", winningTeam.id);
         await updateDoc(teamDoc, updatedTeam);
-        setPopupMessage(`  ${winningTeam.teamname} has won  the bid for ${selectedPlayer.name} for a Auction Price of Rs:${currentHighestBidPrice}`);
+        setPopupMessage(`  ${winningTeam.teamname} has won  the bid for ${selectedPlayer.name} for a Auction Price of Rs:${currentHighestBidPrice || currentBidPrice}`);
 
         fetchData();
         resetBid();
@@ -276,14 +277,14 @@ const SelectedTeam = () => {
 
   return (
     <>
-      
+
       {error && <div className="error-popup">{error}</div>}
       {popupMessage && (
-      <div className="success-popup">
-        {popupMessage}
-        <button onClick={() => setPopupMessage("")}>Close</button>
-      </div>
-    )}
+        <div className="success-popup">
+          {popupMessage}
+          <button onClick={() => setPopupMessage("")}>Close</button>
+        </div>
+      )}
       <div className="selected-team-container">
 
 
@@ -312,7 +313,7 @@ const SelectedTeam = () => {
                   const playerCount = currentTeam.playerCount || 0;
                   const maxBidPrice =
                     currentTeam.balance - 100 * (6 - playerCount);
-                  const startingBidPrice = currentHighestBidPrice + 100;
+                  const startingBidPrice = grades[selectedPlayer.grade]?.price || 100;
 
                   const options = [];
                   for (
