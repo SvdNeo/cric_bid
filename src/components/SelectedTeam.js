@@ -162,7 +162,7 @@ const SelectedTeam = () => {
 
         const updatedTeam = {
           ...winningTeam,
-          balance: winningTeam.balance - bidPrice,
+          balance: winningTeam.balance - currentHighestBidPrice - (100 * (winningTeam.playerCount || 0)),
           playerCount: winningTeam.playerCount ? winningTeam.playerCount + 1 : 1
         };
 
