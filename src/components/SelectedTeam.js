@@ -24,6 +24,8 @@ const SelectedTeam = () => {
     useState(null);
   const [currentHighestBidPrice, setCurrentHighestBidPrice] = useState(0);
   const [initialPrice, setInitialPrice] = useState(0);
+  const [popupMessage, setPopupMessage] = useState("");
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -166,6 +168,8 @@ const SelectedTeam = () => {
 
         const teamDoc = doc(db, "teams", winningTeam.id);
         await updateDoc(teamDoc, updatedTeam);
+        setPopupMessage(`  ${winningTeam.teamname} has won  the bid for ${selectedPlayer.name} for a Auction Price of Rs:${currentHighestBidPrice}`);
+
         fetchData();
         resetBid();
       } else {
@@ -272,7 +276,14 @@ const SelectedTeam = () => {
 
   return (
     <>
+      
       {error && <div className="error-popup">{error}</div>}
+      {popupMessage && (
+      <div className="success-popup">
+        {popupMessage}
+        <button onClick={() => setPopupMessage("")}>Close</button>
+      </div>
+    )}
       <div className="selected-team-container">
 
 
