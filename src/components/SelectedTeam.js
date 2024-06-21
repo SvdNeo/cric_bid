@@ -218,6 +218,7 @@ const SelectedTeam = forwardRef((props,ref) => {
             player.id === selectedPlayer.id ? updatedPlayer : player
           )
         );
+        setPopupMessage(`${selectedPlayer.name} is unsold.`);
       }
       resetBid();
       return;
