@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState,forwardRef,useImperativeHandle } from "react";
 import { db } from "../firebase_config";
 import {
   collection,
@@ -9,7 +9,7 @@ import {
 } from "firebase/firestore";
 import "./SelectedTeam.css";
 
-const SelectedTeam = () => {
+const SelectedTeam = forwardRef((props, ref) => {
   const [initialTeams, setInitialTeams] = useState([]);
   const [teams, setTeams] = useState([]);
   const [grades, setGrades] = useState({});
@@ -22,9 +22,14 @@ const SelectedTeam = () => {
   const [error, setError] = useState("");
   const [currentHighestBiddingTeamIndex, setCurrentHighestBiddingTeamIndex] =
     useState(null);
+
+  const [currentHighestBidPrice, setCurrentHighestBidPrice] = useState(0);
+  const [isBiddingOngoing, setIsBiddingOngoing] = useState(false);
+
   const [currentHighestBidPrice, setCurrentHighestBidPrice] = useState(null);
   const [initialPrice, setInitialPrice] = useState(0);
   const [popupMessage, setPopupMessage] = useState("");
+
 
   useEffect(() => {
     fetchData();
@@ -38,7 +43,11 @@ const SelectedTeam = () => {
         ...doc.data(),
       }));
       setInitialTeams(teamsList);
-      setTeams(teamsList.filter(team => team.playerCount !== undefined && team.playerCount < 7));
+      setTeams(
+        teamsList.filter(
+          (team) => team.playerCount !== undefined && team.playerCount < 7
+        )
+      );
 
       const gradesSnapshot = await getDocs(collection(db, "grade"));
       const gradesList = {};
@@ -104,7 +113,9 @@ const SelectedTeam = () => {
       setError("Failed to reset teams and players. Please try again.");
     }
   };
-
+  useImperativeHandle(ref, () => ({
+    resetTeams,
+  }));
   const renderPlayers = (teamId) => {
     return initialPlayers
       .filter((player) => player.teamId === teamId)
@@ -163,8 +174,15 @@ const SelectedTeam = () => {
 
         const updatedTeam = {
           ...winningTeam,
+
+          balance: winningTeam.balance - bidPrice,
+          playerCount: winningTeam.playerCount
+            ? winningTeam.playerCount + 1
+            : 1,
+
           balance: winningTeam.balance - currentBidPrice,
           playerCount: winningTeam.playerCount ? winningTeam.playerCount + 1 : 1
+
         };
         setInitialTeams(initialTeams.map(initialTeam => {
           if (initialTeam.id === winningTeam.id) {
@@ -232,6 +250,7 @@ const SelectedTeam = () => {
   };
 
   const handleBidStart = () => {
+    setIsBiddingOngoing(true);
     const availablePlayers = players.filter(
       (player) => player.status === "new"
     );
@@ -247,8 +266,12 @@ const SelectedTeam = () => {
     let player;
     // Prioritize players who haven't been bid on
     if (availablePlayers.length === 0 && unsoldPlayers.length > 0) {
+
+      player = unsoldPlayers.filter((player) => player.status !== "unsold")[0];
+
       const randomPlayerIndex = Math.floor(Math.random() * unsoldPlayers.length);
       player = unsoldPlayers[randomPlayerIndex];
+
     } else {
       const randomPlayerIndex = Math.floor(Math.random() * availablePlayers.length);
       player = availablePlayers[randomPlayerIndex];
@@ -266,12 +289,34 @@ const SelectedTeam = () => {
       (player) => player.id !== selectedPlayer?.id
     );
     setPlayers(newPlayers);
-    setTeams(initialTeams.filter(team => team.playerCount !== undefined && team.playerCount < 7));
+    setTeams(
+      initialTeams.filter(
+        (team) => team.playerCount !== undefined && team.playerCount < 7
+      )
+    );
 
     setSelectedPlayer(null);
+
+    setBidPrice(100);
+    setIsBiddingOngoing(false);
+    // if (winningTeamId !== null) {
+    //   setBiddingStartTeamIndex(
+    //     initialTeams.findIndex((team) => team.id === winningTeamId)
+    //   );
+    // } else if (currentHighestBiddingTeamIndex !== null) {
+    //   setBiddingStartTeamIndex(currentHighestBiddingTeamIndex);
+    // }
+    let currentBidTeamLength = initialTeams.filter(
+      (team) => team.playerCount !== undefined && team.playerCount < 7
+    ).length;
+    setBiddingStartTeamIndex(
+      (biddingStartTeamIndex + 1) % currentBidTeamLength
+    );
+
     setBidPrice(null);
     let currentBidTeamLength = (initialTeams.filter(team => team.playerCount !== undefined && team.playerCount < 7)).length;
     setBiddingStartTeamIndex((biddingStartTeamIndex + 1) % currentBidTeamLength);
+
     setCurrentBiddingTeamIndex(biddingStartTeamIndex);
     setCurrentHighestBiddingTeamIndex(null);
     setCurrentHighestBidPrice(null);
@@ -291,20 +336,25 @@ const SelectedTeam = () => {
         </div>
       )}
       <div className="selected-team-container">
-
-
         {/* Bidding Area */}
         <div className="bidding-area">
           <h2 className="bidding-title">Bidding Area</h2>
           <div className="bidding-form">
             {selectedPlayer && (
               <>
-                <h2>{selectedPlayer.name}</h2>
-                <p>Grade: {selectedPlayer.grade}</p>
-                <p>Base Price: {grades[selectedPlayer.grade]?.price}</p>
+                <h2>{selectedPlayer.name}/{selectedPlayer.grade}</h2>
+                
+                
               </>
             )}
+
+            <div>
+  <p className="current-bidding-team">Current Bidding Team: {teams[currentBiddingTeamIndex]?.teamname || ""}</p>
+</div>
+            <div>
+
             {bidPrice && (<div>
+
               <label>Bid Price: </label>
               <select
                 value={bidPrice}
@@ -338,26 +388,17 @@ const SelectedTeam = () => {
               </select>
             </div>)}
 
-            <div>
-              <label>Current Bidding Team: </label>
-              <input
-                type="text"
-                id="current-team"
-                className="small-input"
-                value={teams[currentBiddingTeamIndex]?.teamname || ""}
-                readOnly
-              />
-            </div>
-            <button onClick={handleBidStart}>Start Bid</button>
-            <button
-              onClick={() => handleBidSubmit(teams)}
-              disabled={!selectedPlayer}
-            >
-              Submit Bid
+            
+
+            <button onClick={handleBidStart} disabled={isBiddingOngoing}>
+              Start Bid
             </button>
-            <button onClick={handleBidPass} disabled={!selectedPlayer}>
-              Pass
-            </button>
+            <button className="submit-bid-btn disabled-hover" onClick={() => handleBidSubmit(teams)} disabled={!selectedPlayer}>
+  Submit Bid
+</button>
+<button className="pass-btn disabled-hover" onClick={handleBidPass} disabled={!selectedPlayer}>
+  Pass
+</button>
           </div>
         </div>
 
@@ -365,9 +406,8 @@ const SelectedTeam = () => {
         <div className="teams-container">
           <div className="reset">
             <h2>Teams</h2>
-            <button className="btn-reset" onClick={resetTeams}>
-              Reset
-            </button>
+           
+             
           </div>
           <div className="teams">
             {initialTeams.map((team) => (
@@ -408,6 +448,7 @@ const SelectedTeam = () => {
       </div>
     </>
   );
-};
+});
 
 export default SelectedTeam;
+

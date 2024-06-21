@@ -10,6 +10,36 @@
 .bidding-area {
   padding: 10px;
 }
+
+button {
+  transition: background-color 0.3s ease;
+}
+.disabled-hover:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background-color: inherit;
+}
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background-color: inherit;
+}
+
+button:disabled:hover {
+  background-color: inherit;
+}
+
+.disabled-hover:disabled:hover {
+  background-color: inherit;
+}
+
+button:hover {
+  background-color: grey;
+}
+.submit-bid-btn:hover
+ {
+  background-color: skyblue;
+
 .success-popup {
   position: fixed;
   top: 50%;
@@ -29,8 +59,12 @@
   margin-top: 10px;
   width: fit-content;
   align-self: center;
+
 }
 
+.pass-btn:hover{
+  background-color: rgb(47, 92, 241);
+}
 .teams-container,
 .grades-container {
   overflow-y: auto;
@@ -76,16 +110,7 @@
   border-right: 1px solid #ccc;
 }
 
-.btn-reset {
-  background-color: red;
-  border: none;
-  color: white;
-  padding: 5px;
-  height: fit-content;
-  width: fit-content;
-  text-align: center;
-  text-decoration: none;
-}
+
 
 .bidding-form {
   display: flex;
@@ -285,7 +310,10 @@ li:hover {
     grid-template-rows: auto auto auto;
     height: auto;
   }
-
+  .current-bidding-team {
+    font-weight: bold;
+    margin-bottom: 10px;
+  }
   .btn-reset {
     padding: 6px 12px;
     font-size: 12px;
