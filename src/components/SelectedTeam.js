@@ -137,9 +137,13 @@ const SelectedTeam = forwardRef((props,ref) => {
   };
 
   const handleBidSubmit = async (tempTeams) => {
-    if((teams[currentBiddingTeamIndex].balance - 100 * (6 - teams[currentBiddingTeamIndex].playerCount)) < bidPrice){
-      handleBidPass()
-    };  
+    if ((teams[currentBiddingTeamIndex].balance - 100 * (6 - teams[currentBiddingTeamIndex].playerCount)) < bidPrice) {
+      setCurrentBiddingTeamIndex(
+        (prevIndex) => (prevIndex + 1) % tempTeams.length
+      );
+      handleBidPass();
+      return;
+    };
     
     if (selectedPlayer && bidPrice) {
       setCurrentHighestBiddingTeamIndex(currentBiddingTeamIndex);
@@ -189,7 +193,7 @@ const SelectedTeam = forwardRef((props,ref) => {
       } else {
         setCurrentHighestBidPrice(bidPrice);
         setCurrentBiddingTeamIndex(
-          (prevIndex) => (prevIndex + 1) % remainingTeams.length
+          (prevIndex) => (prevIndex + 1) % tempTeams.length
         );
         setBidPrice(bidPrice + 100); // Set the next bid price
       }
