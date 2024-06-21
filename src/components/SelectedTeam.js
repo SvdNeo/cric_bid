@@ -137,6 +137,10 @@ const SelectedTeam = forwardRef((props,ref) => {
   };
 
   const handleBidSubmit = async (tempTeams) => {
+    if((teams[currentBiddingTeamIndex].balance - 100 * (6 - teams[currentBiddingTeamIndex].playerCount)) < bidPrice){
+      handleBidPass()
+    };  
+    
     if (selectedPlayer && bidPrice) {
       setCurrentHighestBiddingTeamIndex(currentBiddingTeamIndex);
       const remainingTeams = tempTeams.filter(
