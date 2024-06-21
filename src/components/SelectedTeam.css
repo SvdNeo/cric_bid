@@ -88,16 +88,7 @@ button:hover {
   border-right: 1px solid #ccc;
 }
 
-.btn-reset {
-  background-color: red;
-  border: none;
-  color: white;
-  padding: 5px;
-  height: fit-content;
-  width: fit-content;
-  text-align: center;
-  text-decoration: none;
-}
+
 
 .bidding-form {
   display: flex;

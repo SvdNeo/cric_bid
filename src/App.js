@@ -1,18 +1,18 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { BrowserRouter as Router, Route, Link, Routes, Navigate } from 'react-router-dom';
+import React, {  useRef } from 'react';
+import { BrowserRouter as Router, Route, Link, Routes } from 'react-router-dom';
 import './App.css';
 import PlayerManager from './components/PlayerManager';
 import SelectedTeam from './components/SelectedTeam';
 
 
-const Header = ({ isAuthenticated, handleLogout, onResetTeams }) => {
+const Header = ({  onResetTeams }) => {
   return (
     <header>
       <nav>
         <div className="header">
           <h1>Cricbid</h1>
           <ul className="nav-links">
-            {isAuthenticated && (
+           
               <>
                 <li>
                   <Link to="/">Home</Link>
@@ -20,14 +20,12 @@ const Header = ({ isAuthenticated, handleLogout, onResetTeams }) => {
                 <li>
                   <Link to="/selected-team">Selected Team</Link>
                 </li>
+               
                 <li>
-                  <button onClick={handleLogout}>Logout</button>
-                </li>
-                <li>
-                  <button onClick={onResetTeams}>Reset Teams</button>
+                  <button className='btn-reset' onClick={onResetTeams}>Reset</button>
                 </li>
               </>
-            )}
+            
           </ul>
         </div>
       </nav>
@@ -38,22 +36,13 @@ const Header = ({ isAuthenticated, handleLogout, onResetTeams }) => {
 
 
 const App = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+ 
   const teamRef = useRef();
 
-  useEffect(() => {
-    const user = localStorage.getItem("user");
-    if (user) {
-      setIsAuthenticated(true);
-    }
-  }, []);
-
+ 
   
 
-  const handleLogout = () => {
-    localStorage.removeItem("user");
-    setIsAuthenticated(false);
-  };
+ 
 
   const handleResetTeams = () => {
     if (teamRef.current) {
@@ -64,27 +53,23 @@ const App = () => {
   return (
     <Router>
       <div>
-        <Header isAuthenticated={isAuthenticated} handleLogout={handleLogout} onResetTeams={handleResetTeams} />
+        <Header   onResetTeams={handleResetTeams} />
         <Routes>
          
           <Route
             path="/"
             element={
-              isAuthenticated ? (
+              
                 <PlayerManager />
-              ) : (
-                <Navigate to="/login" replace />
-              )
+             
             }
           />
           <Route
             path="/selected-team"
             element={
-              isAuthenticated ? (
+               
                 <SelectedTeam ref={teamRef} />
-              ) : (
-                <Navigate to="/login" replace />
-              )
+             
             }
           />
         </Routes>
