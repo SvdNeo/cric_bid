@@ -10,6 +10,7 @@
 .bidding-area {
   padding: 10px;
 }
+
 button {
   transition: background-color 0.3s ease;
 }
@@ -38,6 +39,27 @@ button:hover {
 .submit-bid-btn:hover
  {
   background-color: skyblue;
+
+.success-popup {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: #4caf50;
+  color: white;
+  padding: 20px;
+  border-radius: 5px;
+  z-index: 999;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+}
+
+.success-popup button {
+  margin-top: 10px;
+  width: fit-content;
+  align-self: center;
+
 }
 
 .pass-btn:hover{
