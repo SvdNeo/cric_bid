@@ -1,4 +1,4 @@
-import React, { useEffect, useState,forwardRef,useImperativeHandle } from "react";
+import React, { useEffect, useState,useImperativeHandle,forwardRef } from "react";
 import { db } from "../firebase_config";
 import {
   collection,
@@ -9,22 +9,23 @@ import {
 } from "firebase/firestore";
 import "./SelectedTeam.css";
 
-const SelectedTeam = forwardRef((props, ref) => {
+const SelectedTeam = forwardRef((props,ref) => {
   const [initialTeams, setInitialTeams] = useState([]);
   const [teams, setTeams] = useState([]);
   const [grades, setGrades] = useState({});
   const [initialPlayers, setInitialPlayers] = useState([]);
   const [players, setPlayers] = useState([]);
   const [selectedPlayer, setSelectedPlayer] = useState(null);
-  const [bidPrice, setBidPrice] = useState();
+  const [bidPrice, setBidPrice] = useState(null);
   const [currentBiddingTeamIndex, setCurrentBiddingTeamIndex] = useState(0);
   const [biddingStartTeamIndex, setBiddingStartTeamIndex] = useState(0);
   const [error, setError] = useState("");
   const [currentHighestBiddingTeamIndex, setCurrentHighestBiddingTeamIndex] =
     useState(null);
-  const [currentHighestBidPrice, setCurrentHighestBidPrice] = useState(0);
+  const [currentHighestBidPrice, setCurrentHighestBidPrice] = useState(null);
+  const [initialPrice, setInitialPrice] = useState(0);
+  const [popupMessage, setPopupMessage] = useState("");
   const [isBiddingOngoing, setIsBiddingOngoing] = useState(false);
-
   useEffect(() => {
     fetchData();
   }, []);
@@ -37,11 +38,7 @@ const SelectedTeam = forwardRef((props, ref) => {
         ...doc.data(),
       }));
       setInitialTeams(teamsList);
-      setTeams(
-        teamsList.filter(
-          (team) => team.playerCount !== undefined && team.playerCount < 7
-        )
-      );
+      setTeams(teamsList.filter(team => team.playerCount !== undefined && team.playerCount < 7));
 
       const gradesSnapshot = await getDocs(collection(db, "grade"));
       const gradesList = {};
@@ -107,9 +104,11 @@ const SelectedTeam = forwardRef((props, ref) => {
       setError("Failed to reset teams and players. Please try again.");
     }
   };
+
   useImperativeHandle(ref, () => ({
     resetTeams,
   }));
+
   const renderPlayers = (teamId) => {
     return initialPlayers
       .filter((player) => player.teamId === teamId)
@@ -140,7 +139,6 @@ const SelectedTeam = forwardRef((props, ref) => {
   const handleBidSubmit = async (tempTeams) => {
     if (selectedPlayer && bidPrice) {
       setCurrentHighestBiddingTeamIndex(currentBiddingTeamIndex);
-      setCurrentHighestBidPrice(bidPrice);
       const remainingTeams = tempTeams.filter(
         (team) => team.balance >= bidPrice
       );
@@ -155,9 +153,10 @@ const SelectedTeam = forwardRef((props, ref) => {
           return;
         }
 
+        const currentBidPrice = currentHighestBidPrice || bidPrice;
         const updatedPlayer = {
           ...selectedPlayer,
-          bidPrice,
+          bidPrice: currentBidPrice,
           teamName: winningTeam.teamname,
           teamId: winningTeam.id,
           status: "sold",
@@ -168,22 +167,27 @@ const SelectedTeam = forwardRef((props, ref) => {
 
         const updatedTeam = {
           ...winningTeam,
-          balance: winningTeam.balance - bidPrice,
-          playerCount: winningTeam.playerCount
-            ? winningTeam.playerCount + 1
-            : 1,
+          balance: winningTeam.balance - currentBidPrice,
+          playerCount: winningTeam.playerCount ? winningTeam.playerCount + 1 : 1
         };
-
+        setInitialTeams(initialTeams.map(initialTeam => {
+          if (initialTeam.id === winningTeam.id) {
+            initialTeam.playerCount = winningTeam.playerCount;
+          }
+          return initialTeam;
+        }));
         const teamDoc = doc(db, "teams", winningTeam.id);
         await updateDoc(teamDoc, updatedTeam);
+        setPopupMessage(`  ${winningTeam.teamname} has won  the bid for ${selectedPlayer.name} for a Auction Price of Rs:${currentHighestBidPrice || currentBidPrice}`);
 
         fetchData();
         resetBid();
       } else {
+        setCurrentHighestBidPrice(bidPrice);
         setCurrentBiddingTeamIndex(
           (prevIndex) => (prevIndex + 1) % remainingTeams.length
         );
-        setBidPrice(currentHighestBidPrice + 100); // Set the next bid price
+        setBidPrice(bidPrice + 100); // Set the next bid price
       }
     } else {
       setError("Please select all required fields.");
@@ -226,7 +230,7 @@ const SelectedTeam = forwardRef((props, ref) => {
         handleBidSubmit(newTeams);
       } else {
         setCurrentBiddingTeamIndex(nextTeamIndex);
-        setBidPrice(currentHighestBidPrice + 100); // Update bid price on pass
+        setBidPrice(currentHighestBidPrice ? currentHighestBidPrice + 100 : initialPrice); // Update bid price on pass
       }
     }
   };
@@ -234,7 +238,7 @@ const SelectedTeam = forwardRef((props, ref) => {
   const handleBidStart = () => {
     setIsBiddingOngoing(true);
     const availablePlayers = players.filter(
-      (player) => player.status !== "sold"
+      (player) => player.status === "new"
     );
     const unsoldPlayers = players.filter(
       (player) => player.status === "unsold"
@@ -244,23 +248,21 @@ const SelectedTeam = forwardRef((props, ref) => {
       setError("No players available for bidding.");
       return;
     }
-    // if (availablePlayers.length === 0) {
-    //   setError("No players available for bidding.");
-    //   return;
-    // }
 
     let player;
     // Prioritize players who haven't been bid on
     if (availablePlayers.length === 0 && unsoldPlayers.length > 0) {
-      player = unsoldPlayers.filter((player) => player.status !== "unsold")[0];
+      const randomPlayerIndex = Math.floor(Math.random() * unsoldPlayers.length);
+      player = unsoldPlayers[randomPlayerIndex];
     } else {
-      player = availablePlayers[0];
+      const randomPlayerIndex = Math.floor(Math.random() * availablePlayers.length);
+      player = availablePlayers[randomPlayerIndex];
     }
 
     setSelectedPlayer(player);
-    const initialPrice = grades[player.grade]?.price || 100;
-    setBidPrice(initialPrice);
-    setCurrentHighestBidPrice(initialPrice - 100); // Set it lower initially to allow the first increment
+    const basePrice = grades[player.grade]?.price || 100;
+    setInitialPrice(basePrice);
+    setBidPrice(basePrice);
     setCurrentBiddingTeamIndex(biddingStartTeamIndex);
   };
 
@@ -269,39 +271,34 @@ const SelectedTeam = forwardRef((props, ref) => {
       (player) => player.id !== selectedPlayer?.id
     );
     setPlayers(newPlayers);
-    setTeams(
-      initialTeams.filter(
-        (team) => team.playerCount !== undefined && team.playerCount < 7
-      )
-    );
+    setTeams(initialTeams.filter(team => team.playerCount !== undefined && team.playerCount < 7));
 
     setSelectedPlayer(null);
-    setBidPrice(100);
-    setIsBiddingOngoing(false);
-    // if (winningTeamId !== null) {
-    //   setBiddingStartTeamIndex(
-    //     initialTeams.findIndex((team) => team.id === winningTeamId)
-    //   );
-    // } else if (currentHighestBiddingTeamIndex !== null) {
-    //   setBiddingStartTeamIndex(currentHighestBiddingTeamIndex);
-    // }
-    let currentBidTeamLength = initialTeams.filter(
-      (team) => team.playerCount !== undefined && team.playerCount < 7
-    ).length;
-    setBiddingStartTeamIndex(
-      (biddingStartTeamIndex + 1) % currentBidTeamLength
-    );
+    setBidPrice(null);
+    let currentBidTeamLength = (initialTeams.filter(team => team.playerCount !== undefined && team.playerCount < 7)).length;
+    setBiddingStartTeamIndex((biddingStartTeamIndex + 1) % currentBidTeamLength);
     setCurrentBiddingTeamIndex(biddingStartTeamIndex);
     setCurrentHighestBiddingTeamIndex(null);
+    setCurrentHighestBidPrice(null);
     await fetchData(); // Ensure data is fetched after reset
+    setIsBiddingOngoing(false);
   };
 
   const gradeOrder = ["A", "B", "C", "D", "E", "F", "G"];
 
   return (
     <>
+
       {error && <div className="error-popup">{error}</div>}
+      {popupMessage && (
+        <div className="success-popup">
+          {popupMessage}
+          <button onClick={() => setPopupMessage("")}>Close</button>
+        </div>
+      )}
       <div className="selected-team-container">
+
+
         {/* Bidding Area */}
         <div className="bidding-area">
           <h2 className="bidding-title">Bidding Area</h2>
@@ -310,13 +307,13 @@ const SelectedTeam = forwardRef((props, ref) => {
               <>
                 <h2>{selectedPlayer.name}/{selectedPlayer.grade}</h2>
                 
-                
+             
+
               </>
+              
             )}
-            <div>
-  <p className="current-bidding-team">Current Bidding Team: {teams[currentBiddingTeamIndex]?.teamname || ""}</p>
-</div>
-            <div>
+            <div>   <p className="current-bidding-team">Current Bidding Team: {teams[currentBiddingTeamIndex]?.teamname || ""}</p></div>
+            {bidPrice && (<div>
               <label>Bid Price: </label>
               <select
                 value={bidPrice}
@@ -330,7 +327,7 @@ const SelectedTeam = forwardRef((props, ref) => {
                   const playerCount = currentTeam.playerCount || 0;
                   const maxBidPrice =
                     currentTeam.balance - 100 * (6 - playerCount);
-                  const startingBidPrice = currentHighestBidPrice + 100;
+                  const startingBidPrice = grades[selectedPlayer.grade]?.price || 100;
 
                   const options = [];
                   for (
@@ -348,18 +345,25 @@ const SelectedTeam = forwardRef((props, ref) => {
                   return options;
                 })()}
               </select>
-            </div>
+            </div>)}
 
             
-
-            <button onClick={handleBidStart} disabled={isBiddingOngoing}>
-              Start Bid
-            </button>
+            <button onClick={handleBidStart} disabled={isBiddingOngoing}>Start Bid</button>
             <button className="submit-bid-btn disabled-hover" onClick={() => handleBidSubmit(teams)} disabled={!selectedPlayer}>
+
+
   Submit Bid
+
+
 </button>
+
+
 <button className="pass-btn disabled-hover" onClick={handleBidPass} disabled={!selectedPlayer}>
+
+
   Pass
+
+
 </button>
           </div>
         </div>
@@ -368,8 +372,7 @@ const SelectedTeam = forwardRef((props, ref) => {
         <div className="teams-container">
           <div className="reset">
             <h2>Teams</h2>
-           
-             
+            
           </div>
           <div className="teams">
             {initialTeams.map((team) => (
@@ -413,4 +416,3 @@ const SelectedTeam = forwardRef((props, ref) => {
 });
 
 export default SelectedTeam;
-
