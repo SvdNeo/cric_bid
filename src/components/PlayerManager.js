@@ -110,6 +110,9 @@ const PlayerManager = () => {
     setPlayerToDelete(null);
   };
 
+  // Sort players by grade before rendering
+  const sortedPlayers = [...players].sort((a, b) => a.grade.localeCompare(b.grade));
+
   return (
     <div className="player-manager">
       <h1>Player Manager</h1>
@@ -139,7 +142,7 @@ const PlayerManager = () => {
       <div className="players-list">
         <h2>Players List</h2>
         <ul>
-          {players.map(player => (
+          {sortedPlayers.map(player => (
             <li key={player.id}>
               {player.name} - {player.grade}
               <div className="player-buttons">
