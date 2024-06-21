@@ -137,14 +137,15 @@ const SelectedTeam = forwardRef((props,ref) => {
   };
 
   const handleBidSubmit = async (tempTeams) => {
-    if ((teams[currentBiddingTeamIndex].balance - 100 * (6 - teams[currentBiddingTeamIndex].playerCount)) < bidPrice) {
-      setCurrentBiddingTeamIndex(
-        (prevIndex) => (prevIndex + 1) % tempTeams.length
-      );
+   
+    const currentTeam = tempTeams[currentBiddingTeamIndex];
+
+    // Check if the current team exists and if its balance is less than the current highest bid price
+    if (currentTeam && currentHighestBidPrice && (currentTeam.balance - 100 * (6 - currentTeam.playerCount)) < currentHighestBidPrice) {
+      setCurrentBiddingTeamIndex((prevIndex) => (prevIndex + 1) % tempTeams.length);
       handleBidPass();
       return;
-    };
-    
+    }
     if (selectedPlayer && bidPrice) {
       setCurrentHighestBiddingTeamIndex(currentBiddingTeamIndex);
       const remainingTeams = tempTeams.filter(
@@ -336,7 +337,7 @@ const SelectedTeam = forwardRef((props,ref) => {
                   const playerCount = currentTeam.playerCount || 0;
                   const maxBidPrice =
                     currentTeam.balance - 100 * (6 - playerCount);
-                  const startingBidPrice = grades[selectedPlayer.grade]?.price || 100;
+                  const startingBidPrice = bidPrice || grades[selectedPlayer.grade]?.price || 100;
 
                   const options = [];
                   for (
