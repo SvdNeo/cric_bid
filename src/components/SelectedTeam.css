@@ -39,7 +39,7 @@ button:hover {
 .submit-bid-btn:hover
  {
   background-color: skyblue;
-
+ }
 .success-popup {
   position: fixed;
   top: 50%;
