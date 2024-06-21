@@ -245,7 +245,7 @@ const SelectedTeam = forwardRef((props,ref) => {
       (player) => player.status === "unsold"
     );
 
-    if (availablePlayers === 0 && unsoldPlayers === 0) {
+    if (availablePlayers.length === 0 && unsoldPlayers.length === 0) {
       setError("No players available for bidding.");
       return;
     }
