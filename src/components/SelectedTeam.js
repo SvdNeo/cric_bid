@@ -268,6 +268,7 @@ const SelectedTeam = forwardRef((props,ref) => {
   };
 
   const resetBid = async (winningTeamId = null) => {
+    setIsBiddingOngoing(false);
     const newPlayers = players.filter(
       (player) => player.id !== selectedPlayer?.id
     );
@@ -282,7 +283,7 @@ const SelectedTeam = forwardRef((props,ref) => {
     setCurrentHighestBiddingTeamIndex(null);
     setCurrentHighestBidPrice(null);
     await fetchData(); // Ensure data is fetched after reset
-    setIsBiddingOngoing(false);
+   
   };
 
   const gradeOrder = ["A", "B", "C", "D", "E", "F", "G"];
@@ -307,13 +308,12 @@ const SelectedTeam = forwardRef((props,ref) => {
             {selectedPlayer && (
               <>
                 <h2>{selectedPlayer.name}/{selectedPlayer.grade}</h2>
-                
-             
-
-              </>
+               </>
               
             )}
-            <div>   <p className="current-bidding-team">Current Bidding Team: {teams[currentBiddingTeamIndex]?.teamname || ""}</p></div>
+            <div>   <p style={{
+              visibility: !isBiddingOngoing ? "hidden" : "visible",
+            }} className="current-bidding-team">Current Bidding Team: {teams[currentBiddingTeamIndex]?.teamname || ""}</p></div>
             {bidPrice && (<div>
               <label>Bid Price: </label>
               <select
