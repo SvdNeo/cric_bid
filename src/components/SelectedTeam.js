@@ -323,39 +323,59 @@ const SelectedTeam = forwardRef((props,ref) => {
             <div>   <p style={{
               visibility: !isBiddingOngoing ? "hidden" : "visible",
             }} className="current-bidding-team">Current Bidding Team: {teams[currentBiddingTeamIndex]?.teamname || ""}</p></div>
-            {bidPrice && (<div>
-              <label>Bid Price: </label>
-              <select
-                value={bidPrice}
-                onChange={(e) => setBidPrice(Number(e.target.value))}
-                style={{ width: "75px" }}
-              >
-                {(() => {
-                  const currentTeam = teams[currentBiddingTeamIndex];
-                  if (!currentTeam) return null; // Ensure current team exists
+         {bidPrice && (
+  <div>
+    <label>Bid Price: </label>
+    <select
+      value={bidPrice}
+      onChange={(e) => setBidPrice(Number(e.target.value))}
+      style={{ width: "75px" }}
+    >
+      {(() => {
+        const currentTeam = teams[currentBiddingTeamIndex];
+        if (!currentTeam) return null; // Ensure current team exists
 
-                  const playerCount = currentTeam.playerCount || 0;
-                  const maxBidPrice =
-                    currentTeam.balance - 100 * (6 - playerCount);
-                  const startingBidPrice = bidPrice || grades[selectedPlayer.grade]?.price || 100;
+        // Calculate the total number of unbid players
+        const unbidPlayers = players.filter(
+          (player) => player.status === "new" || player.status === "unsold"
+        );
 
-                  const options = [];
-                  for (
-                    let price = startingBidPrice;
-                    price <= maxBidPrice;
-                    price += 100
-                  ) {
-                    options.push(
-                      <option key={price} value={price}>
-                        {price}
-                      </option>
-                    );
-                  }
+        // Calculate the average price of unbid players
+        const totalPrice = unbidPlayers.reduce((sum, player) => {
+          const playerGrade = grades[player.grade];
+          return sum + (playerGrade ? playerGrade.price : 0);
+        }, 0);
+        const averagePrice = totalPrice / unbidPlayers.length;
 
-                  return options;
-                })()}
-              </select>
-            </div>)}
+        // Calculate the remaining players for the current team
+        const remainingPlayers = 7 - (currentTeam.playerCount || 0);
+
+        // Calculate the maximum bid price for the current team
+        let maxBidPrice =
+          currentTeam.balance - remainingPlayers * averagePrice;
+
+        // Handle negative values for maxBidPrice
+        maxBidPrice = Math.max(maxBidPrice, 0);
+console.log(maxBidPrice)
+        const startingBidPrice =
+          bidPrice || grades[selectedPlayer.grade]?.price || 100;
+
+        const options = [];
+        for (let price = startingBidPrice; price <= maxBidPrice; price += 100) {
+          options.push(
+            <option key={price} value={price}>
+              {price}
+            </option>
+          );
+        }
+
+        return options;
+      })()}
+    </select>
+  </div>
+
+
+)}
 
             
             <button onClick={handleBidStart} disabled={isBiddingOngoing}>Start Bid</button>
