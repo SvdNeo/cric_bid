@@ -5,6 +5,7 @@ import {
   getDocs,
   updateDoc,
   doc,
+  getDoc,
   writeBatch,
 } from "firebase/firestore";
 import "./SelectedTeam.css";
@@ -26,6 +27,9 @@ const SelectedTeam = forwardRef((props,ref) => {
   const [initialPrice, setInitialPrice] = useState(0);
   const [popupMessage, setPopupMessage] = useState("");
   const [isBiddingOngoing, setIsBiddingOngoing] = useState(false);
+  const [playerToDelete, setPlayerToDelete] = useState(null);
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -107,19 +111,21 @@ const SelectedTeam = forwardRef((props,ref) => {
 
   useImperativeHandle(ref, () => ({
     resetTeams,
+    
   }));
-
   const renderPlayers = (teamId) => {
     return initialPlayers
       .filter((player) => player.teamId === teamId)
       .sort((a, b) => a.grade.localeCompare(b.grade))
       .map((player) => (
-        <tr key={player.id}>
+        <tr key={player.id} onClick={() => handleDeletePlayer(player)}>
           <td>{player.name}</td>
+          <td>{player.grade}</td>
           <td>{player.bidPrice}</td>
         </tr>
       ));
   };
+  
   const colorCode = { new: "black", unsold: "red", sold: "blue" };
   const renderPlayersByGrade = (grade) => {
     return initialPlayers
@@ -140,7 +146,7 @@ const SelectedTeam = forwardRef((props,ref) => {
     const currentTeam = tempTeams[currentBiddingTeamIndex];
   
     // Check if the current team exists and if its balance is less than the current highest bid price
-    if (currentTeam && currentHighestBidPrice && (currentTeam.balance - 100 * (6 - currentTeam.playerCount)) < currentHighestBidPrice) {
+    if (currentTeam && currentHighestBidPrice && calculateMaxBidPrice < currentHighestBidPrice) {
       setCurrentBiddingTeamIndex((prevIndex) => (prevIndex + 1) % tempTeams.length);
       handleBidPass();
       return;
@@ -291,7 +297,31 @@ const SelectedTeam = forwardRef((props,ref) => {
     setBidPrice(basePrice);
     setCurrentBiddingTeamIndex(biddingStartTeamIndex);
   };
-
+  const calculateMaxBidPrice = (team, players, grades) => {
+    // Calculate the total number of unbid players
+    const unbidPlayers = players.filter(
+      (player) => player.status === "new" || player.status === "unsold"
+    );
+  
+    // Calculate the average price of unbid players
+    const totalPrice = unbidPlayers.reduce((sum, player) => {
+      const playerGrade = grades[player.grade];
+      return sum + (playerGrade ? playerGrade.price : 0);
+    }, 0);
+    const averagePrice = totalPrice / unbidPlayers.length;
+  
+    // Calculate the remaining players for the current team
+    const remainingPlayers = 7 - (team.playerCount || 0);
+  
+    // Calculate the maximum bid price for the current team
+    let maxBidPrice = team.balance - remainingPlayers * averagePrice;
+  
+    // Handle negative values for maxBidPrice
+    maxBidPrice = Math.max(maxBidPrice, 0);
+  
+    return maxBidPrice;
+  };
+  
   const resetBid = async (winningTeamId = null) => {
     setIsBiddingOngoing(false);
     const newPlayers = players.filter(
@@ -311,6 +341,67 @@ const SelectedTeam = forwardRef((props,ref) => {
    
   };
 
+  const handleDeletePlayer = (player) => {
+    setPlayerToDelete(player);
+    setShowDeleteConfirmation(true);
+  };
+  
+  const handleConfirmDelete = async () => {
+    if (playerToDelete) {
+      // Update the player's status to "new" and remove the teamId and teamName
+      const updatedPlayer = {
+       ...playerToDelete,
+        status: "new",
+        teamId: "",
+        teamName: "",
+        bidPrice: null,
+      };
+  
+      // Update the player document in the database
+      const playerDoc = doc(db, "players", playerToDelete.id);
+      await updateDoc(playerDoc, updatedPlayer);
+  
+      // Update the team's balance and playerCount
+      const teamRef = doc(db, "teams", playerToDelete.teamId);
+      const teamSnapshot = await getDoc(teamRef); // Use getDoc instead of getDocs
+      const teamData = teamSnapshot.data();
+  
+      if (teamData) {
+        await updateDoc(teamRef, {
+          balance: teamData.balance + playerToDelete.bidPrice,
+          playerCount: teamData.playerCount - 1,
+        });
+      }
+  
+      // Update the local state
+      setPlayers(
+        players.map((player) =>
+          player.id === playerToDelete.id? updatedPlayer : player
+        )
+      );
+      setInitialPlayers(
+        initialPlayers.map((player) =>
+          player.id === playerToDelete.id? updatedPlayer : player
+        )
+      );
+      setInitialTeams(
+        initialTeams.map((team) =>
+          team.id === playerToDelete.teamId
+           ? {...team, balance: teamData.balance + playerToDelete.bidPrice, playerCount: teamData.playerCount - 1 }
+            : team
+        )
+      );
+  
+      // Reset the playerToDelete state and close the delete confirmation popup
+      setPlayerToDelete(null);
+      setShowDeleteConfirmation(false);
+    }
+  };
+  const handleCancelDelete = () => {
+    setPlayerToDelete(null);
+    setShowDeleteConfirmation(false);
+  };
+  
   const gradeOrder = ["A", "B", "C", "D", "E", "F", "G"];
 
   return (
@@ -339,61 +430,38 @@ const SelectedTeam = forwardRef((props,ref) => {
             <div>   <p style={{
               visibility: !isBiddingOngoing ? "hidden" : "visible",
             }} className="current-bidding-team">Current Bidding Team: {teams[currentBiddingTeamIndex]?.teamname || ""}</p></div>
-            {bidPrice && (<div>
-              <label>Bid Price: </label>
-              <select
-                value={bidPrice}
-                onChange={(e) => setBidPrice(Number(e.target.value))}
-                style={{ width: "75px" }}
-              >
-                {(() => {
-                  const currentTeam = teams[currentBiddingTeamIndex];
-                  if (!currentTeam) return null; // Ensure current team exists
+           {bidPrice && (
+  <div>
+    <label>Bid Price: </label>
+    <select
+      value={bidPrice}
+      onChange={(e) => setBidPrice(Number(e.target.value))}
+      style={{ width: "75px" }}
+    >
+      {(() => {
+        const currentTeam = teams[currentBiddingTeamIndex];
+        if (!currentTeam) return null; // Ensure current team exists
 
-        // Calculate the total number of unbid players
-        const unbidPlayers = players.filter(
-          (player) => player.status === "new" || player.status === "unsold"
-        );
+        const maxBidPrice = calculateMaxBidPrice(currentTeam, players, grades);
 
-        // Calculate the average price of unbid players
-        const totalPrice = unbidPlayers.reduce((sum, player) => {
-          const playerGrade = grades[player.grade];
-          return sum + (playerGrade ? playerGrade.price : 0);
-        }, 0);
-        const averagePrice = totalPrice / unbidPlayers.length;
-console.log(averagePrice)
-        // Calculate the remaining players for the current team
-        const remainingPlayers = 7 - (currentTeam.playerCount || 0);
-
-        // Calculate the maximum bid price for the current team
-        let maxBidPrice =
-           currentTeam.balance - remainingPlayers * averagePrice ;
-       
-        // Handle negative values for maxBidPrice
-        maxBidPrice = Math.max(maxBidPrice, 0)
-console.log(maxBidPrice)
-        maxBidPrice = (currentTeam.balance > maxBidPrice) ? (currentTeam.balance - 100 * (6 - currentTeam.playerCount)) :maxBidPrice;
-   console.log(maxBidPrice)
         const startingBidPrice =
-          bidPrice || grades[selectedPlayer.grade]?.price || 100;
+          bidPrice || grades[selectedPlayer.grade]?.price || 100
+        const options = [];
+        for (let price = startingBidPrice; price <= maxBidPrice; price += 100) {
+          options.push(
+            <option key={price} value={price}>
+              {price}
+            </option>
+          );
+        }
 
-                  const options = [];
-                  for (
-                    let price = startingBidPrice;
-                    price <= maxBidPrice;
-                    price += 100
-                  ) {
-                    options.push(
-                      <option key={price} value={price}>
-                        {price}
-                      </option>
-                    );
-                  }
+        return options;
+      })()}
+    </select>
+  </div>
+)}
 
-                  return options;
-                })()}
-              </select>
-            </div>)}
+
             
             <button onClick={handleBidStart} disabled={isBiddingOngoing}>Start Bid</button>
             <button className="submit-bid-btn disabled-hover" onClick={() => handleBidSubmit(teams)} disabled={!selectedPlayer}>
@@ -410,6 +478,17 @@ console.log(maxBidPrice)
             <h2>Teams</h2>
             
           </div>
+          {showDeleteConfirmation && (
+  <div className="modal">
+    <div className="modal-content">
+      <p>Are you sure you want to delete {playerToDelete?.name}?</p>
+      <div className="modal-buttons">
+        <button onClick={handleConfirmDelete}>Yes</button>
+        <button onClick={handleCancelDelete}>No</button>
+      </div>
+    </div>
+  </div>
+)}
           <div className="teams">
             {initialTeams.map((team) => (
               <div className="team" key={team.id}>
@@ -423,7 +502,8 @@ console.log(maxBidPrice)
                   <thead>
                     <tr>
                       <th>Name</th>
-                      <th>Auction Price</th>
+                      <th>Grade</th>
+                      <th>Bid Price</th>
                     </tr>
                   </thead>
                   <tbody>{renderPlayers(team.id)}</tbody>
