@@ -137,6 +137,15 @@ const SelectedTeam = forwardRef((props,ref) => {
   };
 
   const handleBidSubmit = async (tempTeams) => {
+   
+    const currentTeam = tempTeams[currentBiddingTeamIndex];
+
+    // Check if the current team exists and if its balance is less than the current highest bid price
+    if (currentTeam && currentHighestBidPrice && (currentTeam.balance - 100 * (6 - currentTeam.playerCount)) < currentHighestBidPrice) {
+      setCurrentBiddingTeamIndex((prevIndex) => (prevIndex + 1) % tempTeams.length);
+      handleBidPass();
+      return;
+    }
     if (selectedPlayer && bidPrice) {
       setCurrentHighestBiddingTeamIndex(currentBiddingTeamIndex);
       const remainingTeams = tempTeams.filter(
@@ -185,7 +194,7 @@ const SelectedTeam = forwardRef((props,ref) => {
       } else {
         setCurrentHighestBidPrice(bidPrice);
         setCurrentBiddingTeamIndex(
-          (prevIndex) => (prevIndex + 1) % remainingTeams.length
+          (prevIndex) => (prevIndex + 1) % tempTeams.length
         );
         setBidPrice(bidPrice + 100); // Set the next bid price
       }
@@ -268,6 +277,7 @@ const SelectedTeam = forwardRef((props,ref) => {
   };
 
   const resetBid = async (winningTeamId = null) => {
+    setIsBiddingOngoing(false);
     const newPlayers = players.filter(
       (player) => player.id !== selectedPlayer?.id
     );
@@ -282,7 +292,7 @@ const SelectedTeam = forwardRef((props,ref) => {
     setCurrentHighestBiddingTeamIndex(null);
     setCurrentHighestBidPrice(null);
     await fetchData(); // Ensure data is fetched after reset
-    setIsBiddingOngoing(false);
+   
   };
 
   const gradeOrder = ["A", "B", "C", "D", "E", "F", "G"];
@@ -307,13 +317,12 @@ const SelectedTeam = forwardRef((props,ref) => {
             {selectedPlayer && (
               <>
                 <h2>{selectedPlayer.name}/{selectedPlayer.grade}</h2>
-                
-             
-
-              </>
+               </>
               
             )}
-            <div>   <p className="current-bidding-team">Current Bidding Team: {teams[currentBiddingTeamIndex]?.teamname || ""}</p></div>
+            <div>   <p style={{
+              visibility: !isBiddingOngoing ? "hidden" : "visible",
+            }} className="current-bidding-team">Current Bidding Team: {teams[currentBiddingTeamIndex]?.teamname || ""}</p></div>
             {bidPrice && (<div>
               <label>Bid Price: </label>
               <select
@@ -325,10 +334,32 @@ const SelectedTeam = forwardRef((props,ref) => {
                   const currentTeam = teams[currentBiddingTeamIndex];
                   if (!currentTeam) return null; // Ensure current team exists
 
-                  const playerCount = currentTeam.playerCount || 0;
-                  const maxBidPrice =
-                    currentTeam.balance - 100 * (6 - playerCount);
-                  const startingBidPrice = grades[selectedPlayer.grade]?.price || 100;
+        // Calculate the total number of unbid players
+        const unbidPlayers = players.filter(
+          (player) => player.status === "new" || player.status === "unsold"
+        );
+
+        // Calculate the average price of unbid players
+        const totalPrice = unbidPlayers.reduce((sum, player) => {
+          const playerGrade = grades[player.grade];
+          return sum + (playerGrade ? playerGrade.price : 0);
+        }, 0);
+        const averagePrice = totalPrice / unbidPlayers.length;
+console.log(averagePrice)
+        // Calculate the remaining players for the current team
+        const remainingPlayers = 7 - (currentTeam.playerCount || 0);
+
+        // Calculate the maximum bid price for the current team
+        let maxBidPrice =
+           currentTeam.balance - remainingPlayers * averagePrice ;
+       
+        // Handle negative values for maxBidPrice
+        maxBidPrice = Math.max(maxBidPrice, 0)
+console.log(maxBidPrice)
+        maxBidPrice = (currentTeam.balance > maxBidPrice) ? (currentTeam.balance - 100 * (6 - currentTeam.playerCount)) :maxBidPrice;
+   console.log(maxBidPrice)
+        const startingBidPrice =
+          bidPrice || grades[selectedPlayer.grade]?.price || 100;
 
                   const options = [];
                   for (
