@@ -1,5 +1,5 @@
 import React, { useEffect, useState,useImperativeHandle,forwardRef } from "react";
-import { db } from "../firebase_config";
+import { db } from "./firebase/firebase_config";
 import {
   collection,
   getDocs,
