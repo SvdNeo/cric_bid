@@ -1,55 +1,39 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import './Login.css'; // Assuming the CSS is saved in App.css
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { auth } from './firebase/firebase_config';
+import { logInWithEmailAndPassword } from './firebase/auth';
+import { useAuthState } from "react-firebase-hooks/auth";
+import "./Login.css";
 
-const Login = ({ onLogin }) => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [errors, setErrors] = useState({});
-  const [authError, setAuthError] = useState('');
+function Login() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [user, loading, error] = useAuthState(auth);
   const navigate = useNavigate();
 
-  const validate = () => {
-    const newErrors = {};
-    if (!username) newErrors.username = 'Username is required';
-    if (!password) newErrors.password = 'Password is required';
-    return newErrors;
-  };
+  useEffect(() => {
+    if (loading) return;
+    if (user) navigate("/playerManager");
+  }, [user, loading]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const validationErrors = validate();
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      setAuthError('');
-    } else {
-      if (username === 'admin' && password === 'admin123') {
-        localStorage.setItem('isAuthenticated', 'true');
-        onLogin();
-        navigate('/');
-      } else {
-        setAuthError('Invalid username or password');
-      }
-    }
+    await logInWithEmailAndPassword(email, password);
   };
 
   return (
     <div className="login-container">
       <form className="login-form" onSubmit={handleSubmit}>
-        <div>        <h2>Login</h2>
-        </div>
+        <h2>Login</h2>
         <div className="form-group">
-          <label htmlFor="username">Username:</label>
+          <label htmlFor="email">Email:</label>
           <input
             type="text"
-            id="username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            id="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
           />
-         
-        
         </div>
-        {errors.username && <div className="error">{errors.username}</div>}
         <div className="form-group">
           <label htmlFor="password">Password:</label>
           <input
@@ -58,12 +42,10 @@ const Login = ({ onLogin }) => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
-           
         </div>
-        {errors.password && <div className="error">{errors.password}</div>}
-           {authError && <div className="error">{authError}</div>}
-       <div className='login-button'>  <button  type="submit">Login</button></div>
-      
+        <div className='login-button'>
+          <button type="submit">Login</button>
+        </div>
       </form>
     </div>
   );

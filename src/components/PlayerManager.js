@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { db } from '../firebase_config'; 
+import { db } from './firebase/firebase_config'; 
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 import './PlayerManager.css';
 
