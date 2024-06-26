@@ -6,6 +6,12 @@
   padding: 10px;
   height: 100vh; 
 }
+.teams-container table td {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px; /* Adjust this value as needed */
+}
 
 .bidding-area {
   padding: 10px;
