@@ -298,28 +298,36 @@ const SelectedTeam = forwardRef((props,ref) => {
     setCurrentBiddingTeamIndex(biddingStartTeamIndex);
   };
   const calculateMaxBidPrice = (team, players, grades) => {
-    // Calculate the total number of unbid players
-    const unbidPlayers = players.filter(
-      (player) => player.status === "new" || player.status === "unsold"
-    );
-  
-    // Calculate the average price of unbid players
-    const totalPrice = unbidPlayers.reduce((sum, player) => {
-      const playerGrade = grades[player.grade];
-      return sum + (playerGrade ? playerGrade.price : 0);
-    }, 0);
-    const averagePrice = totalPrice / unbidPlayers.length;
-  
     // Calculate the remaining players for the current team
     const remainingPlayers = 7 - (team.playerCount || 0);
   
+    // Sort the unsold players by their grade price in descending order
+    const unsoldPlayers = players.filter(
+      (player) => player.status === "new" || player.status === "unsold"
+    );
+    const sortedUnsoldPlayers = unsoldPlayers.sort(
+      (a, b) => grades[b.grade].price - grades[a.grade].price
+    );
+  
+    // Find the top "remainingPlayers" unsold players and calculate their total value
+    const topUnsoldPlayers = sortedUnsoldPlayers.slice(0, remainingPlayers);
+    const totalValueOfTopPlayers = topUnsoldPlayers.reduce((sum, player) => {
+      const playerGrade = grades[player.grade];
+      return sum + (playerGrade ? playerGrade.price : 0);
+    }, 0);
+  
+    // Remove the highest value from the total value of top players
+    const valueWithoutHighestPlayer =
+      totalValueOfTopPlayers -
+      (sortedUnsoldPlayers[0]
+        ? grades[sortedUnsoldPlayers[0].grade].price
+        : 0);
+  
     // Calculate the maximum bid price for the current team
-    let maxBidPrice = team.balance - remainingPlayers * averagePrice;
+    const maxBidPrice = team.balance - valueWithoutHighestPlayer;
   
     // Handle negative values for maxBidPrice
-    maxBidPrice = Math.max(maxBidPrice, 0);
-  
-    return maxBidPrice;
+    return Math.max(maxBidPrice, 0);
   };
   
   const resetBid = async (winningTeamId = null) => {
