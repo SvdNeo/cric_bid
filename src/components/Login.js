@@ -4,10 +4,12 @@ import { auth } from './firebase/firebase_config';
 import { logInWithEmailAndPassword } from './firebase/auth';
 import { useAuthState } from "react-firebase-hooks/auth";
 import "./Login.css";
+import { FaEyeSlash, FaEye } from 'react-icons/fa';
 
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [user, loading, error] = useAuthState(auth);
   const [errors, setErrors] = useState({});
   const navigate = useNavigate();
@@ -49,11 +51,15 @@ function Login() {
     }
   };
 
+  const toggleShowPassword = () => {
+    setShowPassword(!showPassword);
+  };
+
   return (
     <div className="login-container">
       <form className="login-form" onSubmit={handleSubmit}>
         <h2>Login</h2>
-        <div className="form-group">
+        <div className="form-group label" >
           <label htmlFor="email">Email:</label>
           <input
             type="text"
@@ -61,18 +67,21 @@ function Login() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
-          
         </div>
         {errors.email && <span className="error">{errors.email}</span>}
         <div className="form-group">
           <label htmlFor="password">Password:</label>
-          <input
-            type="password"
-            id="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-          
+          <div className="password-input">
+            <input
+              type={showPassword ? "text" : "password"}
+              id="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            <span className="toggle-password" onClick={toggleShowPassword}>
+              {showPassword ? <FaEyeSlash /> : <FaEye />}
+            </span>
+          </div>
         </div>
         {errors.password && <span className="error">{errors.password}</span>}
         <div className="login-button">
