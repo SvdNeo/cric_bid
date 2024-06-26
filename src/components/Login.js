@@ -9,16 +9,44 @@ function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [user, loading, error] = useAuthState(auth);
+  const [errors, setErrors] = useState({});
   const navigate = useNavigate();
 
   useEffect(() => {
     if (loading) return;
     if (user) navigate("/playerManager");
-  }, [user, loading]);
+  }, [user, loading, navigate]);
+
+  const validate = () => {
+    let errors = {};
+    if (!email) {
+      errors.email = "Email is required";
+    } else if (!/\S+@\S+\.\S+/.test(email)) {
+      errors.email = "Email address is invalid";
+    }
+
+    if (!password) {
+      errors.password = "Password is required";
+    } else if (password.length < 6) {
+      errors.password = "Password must be at least 6 characters long";
+    }
+
+    return errors;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    await logInWithEmailAndPassword(email, password);
+    const validationErrors = validate();
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+    } else {
+      try {
+        await logInWithEmailAndPassword(email, password);
+      } catch (err) {
+        console.error("Error during login:", err);
+        alert("Login failed. Please check your credentials and try again.");
+      }
+    }
   };
 
   return (
@@ -33,7 +61,9 @@ function Login() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
+          
         </div>
+        {errors.email && <span className="error">{errors.email}</span>}
         <div className="form-group">
           <label htmlFor="password">Password:</label>
           <input
@@ -42,13 +72,15 @@ function Login() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
+          
         </div>
-        <div className='login-button'>
+        {errors.password && <span className="error">{errors.password}</span>}
+        <div className="login-button">
           <button type="submit">Login</button>
         </div>
       </form>
     </div>
   );
-};
+}
 
 export default Login;
