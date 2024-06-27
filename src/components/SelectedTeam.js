@@ -1,5 +1,5 @@
 import React, { useEffect, useState,useImperativeHandle,forwardRef } from "react";
-import { db } from "../firebase_config";
+import { db } from "./firebase/firebase_config";
 import {
   collection,
   getDocs,
@@ -314,6 +314,7 @@ const SelectedTeam = forwardRef((props,ref) => {
     }
   };
   
+
   const getTopPlayerForTeam = (team, unbidPlayers, grades) => {
     const teamPlayerCount = team.playerCount || 0;
     const remainingPlayers = 7 - teamPlayerCount;
@@ -377,6 +378,7 @@ const SelectedTeam = forwardRef((props,ref) => {
     // Calculate the maximum bid price for the current team
     const maxBidPrice = team.balance - remainingTopValues;
     console.log(maxBidPrice);
+  
   
     // Handle negative values for maxBidPrice
     return Math.max(maxBidPrice, 0);
