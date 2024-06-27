@@ -314,19 +314,56 @@ const SelectedTeam = forwardRef((props,ref) => {
     }
   };
   
+  const getTopPlayerForTeam = (team, unbidPlayers, grades) => {
+    const teamPlayerCount = team.playerCount || 0;
+    const remainingPlayers = 7 - teamPlayerCount;
+
+    // Sort the unbidPlayers array based on the price in descending order to prioritize higher prices
+    unbidPlayers.sort((a, b) => grades[b.grade].price - grades[a.grade].price);
+
+    const selectedPlayers = [];
+    let remainingBalance = team.balance;
+    let start = 0, end = unbidPlayers.length - 1;
+
+    while (start <= end && selectedPlayers.length < remainingPlayers) {
+        // Try to pick the most expensive player first
+        const playerPrice = grades[unbidPlayers[start].grade].price;
+        if (playerPrice <= remainingBalance) {
+            // Try removing the most expensive player and check if remaining count is achievable
+            const removedPlayer = selectedPlayers.length >= remainingPlayers ? selectedPlayers.shift() : null;
+            selectedPlayers.push(unbidPlayers[start]);
+            remainingBalance = team.balance - selectedPlayers.reduce((sum, player) => sum + grades[player.grade].price, 0);
+
+            if (removedPlayer) {
+                const remainingCount = 7 - (teamPlayerCount + selectedPlayers.length);
+                if (remainingCount > 0) {
+                    selectedPlayers.unshift(removedPlayer); // Add the removed player back
+                    remainingBalance += grades[removedPlayer.grade].price;
+                }
+            }
+            start++;
+        } else {
+            // If the most expensive player can't be picked, move to the next one
+            start++;
+        }
+    }
+
+    return selectedPlayers;
+}
+
   const calculateMaxBidPrice = (team, players, grades) => {
     // Get the list of unsold and new players
     const unbidPlayers = players.filter(player => player.status === "new" || player.status === "unsold");
   
     // Sort the unbid players by their grade price in descending order
-    unbidPlayers.sort((a, b) => grades[b.grade].price - grades[a.grade].price);
-  const teamPlayerCount = team.playerCount || 0;
-    // Calculate the remaining players for the current team
-    const remainingPlayers = 7 - teamPlayerCount;
+  //   unbidPlayers.sort((a, b) => grades[b.grade].price - grades[a.grade].price);
+  // const teamPlayerCount = team.playerCount || 0;
+  //   // Calculate the remaining players for the current team
+  //   const remainingPlayers = 7 - teamPlayerCount;
   
-    // Get the top R players
-   const topPlayers = unbidPlayers.slice(0, remainingPlayers);
-   
+  //   // Get the top R players
+  //  const topPlayers = unbidPlayers.slice(0, remainingPlayers);
+  const topPlayers = getTopPlayerForTeam(team, unbidPlayers, grades);
     // Calculate the sum of the top R players' values
     const totalTopValues = topPlayers.reduce((sum, player) => {
       const playerGrade = grades[player.grade];
