@@ -515,7 +515,7 @@ const SelectedTeam = forwardRef((props,ref) => {
               <div className="team" key={team.id}>
                 <h3 style={{ textAlign: "center" }}>{team.teamname}</h3>
                 <div className="budget">
-                  <p>Budget: {team.budget}</p>
+                <p>Max Bid Price: {calculateMaxBidPrice(team, players, grades)}</p>
                   <p>Balance: {team.balance}</p>
                   {/* <p>Players: {team.playerCount}</p> */}
                 </div>
