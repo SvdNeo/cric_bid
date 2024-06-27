@@ -135,13 +135,14 @@ const SelectedTeam = forwardRef((props,ref) => {
           key={player.id}
           style={{
             color: colorCode[player.status],
+            cursor: "pointer", // Add cursor pointer to indicate clickable
           }}
+          onDoubleClick={() => handlePlayerDoubleClick(player)}
         >
           {player.name}
         </li>
       ));
   };
-
   const handleBidSubmit = async (tempTeams) => {
     const currentTeam = tempTeams[currentBiddingTeamIndex];
   
@@ -266,60 +267,80 @@ const SelectedTeam = forwardRef((props,ref) => {
       }
     }
   };  
-
-  const handleBidStart = () => {
-    setIsBiddingOngoing(true);
-    const availablePlayers = players.filter(
-      (player) => player.status === "new"
-    );
-    const unsoldPlayers = players.filter(
-      (player) => player.status === "unsold"
-    );
-
-    if (availablePlayers === 0 && unsoldPlayers === 0) {
-      setError("No players available for bidding.");
-      return;
-    }
-
-    let player;
-    // Prioritize players who haven't been bid on
-    if (availablePlayers.length === 0 && unsoldPlayers.length > 0) {
-      const randomPlayerIndex = Math.floor(Math.random() * unsoldPlayers.length);
-      player = unsoldPlayers[randomPlayerIndex];
-    } else {
-      const randomPlayerIndex = Math.floor(Math.random() * availablePlayers.length);
-      player = availablePlayers[randomPlayerIndex];
-    }
-
+  const handlePlayerDoubleClick = (player) => {
     setSelectedPlayer(player);
     const basePrice = grades[player.grade]?.price || 100;
     setInitialPrice(basePrice);
     setBidPrice(basePrice);
     setCurrentBiddingTeamIndex(biddingStartTeamIndex);
+    setIsBiddingOngoing(true);
   };
+  
+  const handleBidStart = () => {
+    setIsBiddingOngoing(true);
+  
+    if (!selectedPlayer) {
+      const availablePlayers = players.filter(
+        (player) => player.status === "new"
+      );
+      const unsoldPlayers = players.filter(
+        (player) => player.status === "unsold"
+      );
+  
+      if (availablePlayers.length === 0 && unsoldPlayers.length === 0) {
+        setError("No players available for bidding.");
+        return;
+      }
+  
+      let player;
+      // Prioritize players who haven't been bid on
+      if (availablePlayers.length === 0 && unsoldPlayers.length > 0) {
+        const randomPlayerIndex = Math.floor(Math.random() * unsoldPlayers.length);
+        player = unsoldPlayers[randomPlayerIndex];
+      } else {
+        const randomPlayerIndex = Math.floor(Math.random() * availablePlayers.length);
+        player = availablePlayers[randomPlayerIndex];
+      }
+  
+      setSelectedPlayer(player);
+      const basePrice = grades[player.grade]?.price || 100;
+      setInitialPrice(basePrice);
+      setBidPrice(basePrice);
+      setCurrentBiddingTeamIndex(biddingStartTeamIndex);
+    }
+  };
+  
   const calculateMaxBidPrice = (team, players, grades) => {
-    // Calculate the total number of unbid players
-    const unbidPlayers = players.filter(
-      (player) => player.status === "new" || player.status === "unsold"
-    );
-  
-    // Calculate the average price of unbid players
-    const totalPrice = unbidPlayers.reduce((sum, player) => {
-      const playerGrade = grades[player.grade];
-      return sum + (playerGrade ? playerGrade.price : 0);
-    }, 0);
-    const averagePrice = totalPrice / unbidPlayers.length;
-  
     // Calculate the remaining players for the current team
     const remainingPlayers = 7 - (team.playerCount || 0);
   
+    // Sort the unsold players by their grade price in descending order
+    const unsoldPlayers = players.filter(
+      (player) => player.status === "new" || player.status === "unsold"
+    );
+    const sortedUnsoldPlayers = unsoldPlayers.sort(
+      (a, b) => grades[b.grade].price - grades[a.grade].price
+    );
+  
+    // Find the top "remainingPlayers" unsold players and calculate their total value
+    const topUnsoldPlayers = sortedUnsoldPlayers.slice(0, remainingPlayers);
+    const totalValueOfTopPlayers = topUnsoldPlayers.reduce((sum, player) => {
+      const playerGrade = grades[player.grade];
+      return sum + (playerGrade ? playerGrade.price : 0);
+    }, 0);
+  
+    // Remove the highest value from the total value of top players
+    const valueWithoutHighestPlayer =
+      totalValueOfTopPlayers -
+      (sortedUnsoldPlayers[0]
+        ? grades[sortedUnsoldPlayers[0].grade].price
+        : 0);
+  
     // Calculate the maximum bid price for the current team
-    let maxBidPrice = team.balance - remainingPlayers * averagePrice;
+    const maxBidPrice = team.balance - valueWithoutHighestPlayer;
   
     // Handle negative values for maxBidPrice
-    maxBidPrice = Math.max(maxBidPrice, 0);
-  
-    return maxBidPrice;
+    return Math.max(maxBidPrice, 0);
   };
   
   const resetBid = async (winningTeamId = null) => {
