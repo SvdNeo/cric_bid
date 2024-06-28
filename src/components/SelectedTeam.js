@@ -152,7 +152,7 @@ const SelectedTeam = forwardRef((props, ref) => {
         </li>
       ));
   };
-  const handleBidSubmit = async (tempTeams) => {
+  const handleBidSubmit = async (tempTeams, isPassed) => {
     const currentTeam = tempTeams[currentBiddingTeamIndex];
 
     if (
@@ -170,10 +170,12 @@ const SelectedTeam = forwardRef((props, ref) => {
 
     if (selectedPlayer && bidPrice) {
       setCurrentHighestBiddingTeamIndex(currentBiddingTeamIndex);
-      const remainingTeams = tempTeams.filter(
-        (team) => team.balance >= bidPrice
-      );
-
+      let remainingTeams = tempTeams;
+      if (!isPassed) {
+        remainingTeams = tempTeams.filter(
+          (team) => team.balance >= bidPrice
+        );
+      }
       if (remainingTeams.length === 1) {
         const winningTeam = remainingTeams[0];
         const playersOnWinningTeam = players.filter(
@@ -283,7 +285,7 @@ const SelectedTeam = forwardRef((props, ref) => {
       return;
     }
     if (newTeams.length === 1 && currentHighestBiddingTeamIndex !== null) {
-      handleBidSubmit(newTeams);
+      handleBidSubmit(newTeams, true);
     } else {
       const nextTeamIndex = currentBiddingTeamIndex % newTeams.length;
       if (nextTeamIndex === currentHighestBiddingTeamIndex) {
@@ -537,103 +539,114 @@ const SelectedTeam = forwardRef((props, ref) => {
       <div className="selected-team-container">
         {/* Bidding Area */}
         <div className="bidding-area">
+          <h2 className="bidding-title">Bidding Area</h2>
+          <div className="bidding-section">
+            <div className="bidding-form-container">
+              <div className="bidding-form">
+                {selectedPlayer && (
+                  <>
+                    <h2>
+                      {selectedPlayer.name}/{selectedPlayer.grade}
+                    </h2>
+                  </>
+                )}
+                <div>
+                  <p
+                    style={{
+                      visibility: !isBiddingOngoing ? "hidden" : "visible",
+                    }}
+                    className="current-bidding-team"
+                  >
+                    Current Bidding Team:{" "}
+                    {teams[currentBiddingTeamIndex]?.teamname || ""}
+                  </p>
+                </div>
+                {bidPrice && (
+                  <div>
+                    <label>Bid Price: </label>
+                    <select
+                      value={bidPrice}
+                      onChange={(e) => setBidPrice(Number(e.target.value))}
+                      style={{ width: "75px" }}
+                    >
+                      {(() => {
+                        const currentTeam = teams[currentBiddingTeamIndex];
+                        if (!currentTeam) return null; // Ensure current team exists
 
-  <h2 className="bidding-title">Bidding Area</h2>
-  <div className="bidding-section">
-    <div className="bidding-form-container">
-      <div className="bidding-form">
-        {selectedPlayer && (
-          <>
-            <h2>{selectedPlayer.name}/{selectedPlayer.grade}</h2>
-          </>
-        )}
-        <div>
-          <p
-            style={{
-              visibility: !isBiddingOngoing ? "hidden" : "visible",
-            }}
-            className="current-bidding-team"
-          >
-            Current Bidding Team: {teams[currentBiddingTeamIndex]?.teamname || ""}
-          </p>
-        </div>
-        {bidPrice && (
-          <div>
-            <label>Bid Price: </label>
-            <select
-              value={bidPrice}
-              onChange={(e) => setBidPrice(Number(e.target.value))}
-              style={{ width: "75px" }}
-            >
-              {(() => {
-                const currentTeam = teams[currentBiddingTeamIndex];
-                if (!currentTeam) return null; // Ensure current team exists
+                        const maxBidPrice = calculateMaxBidPrice(
+                          currentTeam,
+                          players,
+                          grades
+                        );
 
-                const maxBidPrice = calculateMaxBidPrice(currentTeam, players, grades);
+                        const startingBidPrice =
+                          bidPrice ||
+                          grades[selectedPlayer.grade]?.price ||
+                          100;
+                        const options = [];
+                        for (
+                          let price = startingBidPrice;
+                          price <= maxBidPrice;
+                          price += 100
+                        ) {
+                          options.push(
+                            <option key={price} value={price}>
+                              {price}
+                            </option>
+                          );
+                        }
 
-                const startingBidPrice =
-                  bidPrice || grades[selectedPlayer.grade]?.price || 100;
-                const options = [];
-                for (let price = startingBidPrice; price <= maxBidPrice; price += 100) {
-                  options.push(
-                    <option key={price} value={price}>
-                      {price}
-                    </option>
-                  );
-                }
+                        return options;
+                      })()}
+                    </select>
+                  </div>
+                )}
 
-                return options;
-              })()}
-            </select>
-
-          </div>
-        )}
-
-        <button onClick={handleBidStart} disabled={isBiddingOngoing}>
-          Start Bid
-        </button>
-        <button
-          className="submit-bid-btn disabled-hover"
-          onClick={() => handleBidSubmit(teams)}
-          disabled={!selectedPlayer}
-        >
-          Submit Bid
-        </button>
-        <button
-          className="pass-btn disabled-hover"
-          onClick={handleBidPass}
-          disabled={!selectedPlayer}
-        >
-          Pass
-        </button>
-      </div>
-    </div>
-    <div className="bidding-info-container">
-      <div className="bidding-info-left">
-        <p>Current Highest Bid Price: {currentHighestBidPrice}</p>
-        <div className="team-names-container">
-        {teams
-  .filter(
-    (team) =>
-      team.playerCount < 7 && calculateMaxBidPrice(team, players, grades) > currentHighestBidPrice
-  )
-  .map((team) => (
-    <span
-      key={team.id}
-      className={
-        team.id === teams[currentBiddingTeamIndex]?.id
-          ? 'current-bidding-team' // green
-          : team.id < teams[currentBiddingTeamIndex]?.id
-          ? 'bidding-over' // orange
-          : 'bidding-eligible' // yellow
-      }
-    >
-      {team.teamname}
-    </span>
-  ))}
-        </div>
-      </div>
-      <div className="bidding-info-right">
+                <button onClick={handleBidStart} disabled={isBiddingOngoing}>
+                  Start Bid
+                </button>
+                <button
+                  className="submit-bid-btn disabled-hover"
+                  onClick={() => handleBidSubmit(teams)}
+                  disabled={!selectedPlayer}
+                >
+                  Submit Bid
+                </button>
+                <button
+                  className="pass-btn disabled-hover"
+                  onClick={handleBidPass}
+                  disabled={!selectedPlayer}
+                >
+                  Pass
+                </button>
+              </div>
+            </div>
+            <div className="bidding-info-container">
+              <div className="bidding-info-left">
+                <p>Current Highest Bid Price: {currentHighestBidPrice}</p>
+                <div>
+                  {teams
+                    .filter(
+                      (team) =>
+                        team.playerCount < 7 &&
+                        calculateMaxBidPrice(team, players, grades) >
+                          currentHighestBidPrice
+                    )
+                    .map((team) => (
+                      <span
+                        key={team.id}
+                        className={
+                          team.id === teams[currentBiddingTeamIndex]?.id
+                            ? "current-bidding-team"
+                            : ""
+                        }
+                      >
+                        {team.teamname}
+                      </span>
+                    ))}
+                </div>
+              </div>
+              <div className="bidding-info-right">
                 {popupMessage && (
                   <div className="success-popup">
                     {popupMessage}
@@ -641,9 +654,9 @@ const SelectedTeam = forwardRef((props, ref) => {
                   </div>
                 )}
               </div>
-    </div>
-  </div>
-</div>
+            </div>
+          </div>
+        </div>
 
         {/* Teams Section */}
         <div className="teams-container">
