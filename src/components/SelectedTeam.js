@@ -512,20 +512,26 @@ const SelectedTeam = forwardRef((props,ref) => {
     <div className="bidding-info-container">
       <div className="bidding-info-left">
         <p>Current Highest Bid Price: {currentHighestBidPrice}</p>
-        <div>
+        <div className="team-names-container">
         {teams
-      .filter(
-        (team) =>
-          team.playerCount < 7 && calculateMaxBidPrice(team, players, grades) > currentHighestBidPrice
-      )
-      .map((team) => (
-        <span
-          key={team.id}
-          className={team.id === teams[currentBiddingTeamIndex]?.id ? 'current-bidding-team' : ''}
-        >
-          {team.teamname}
-        </span>
-      ))}
+  .filter(
+    (team) =>
+      team.playerCount < 7 && calculateMaxBidPrice(team, players, grades) > currentHighestBidPrice
+  )
+  .map((team) => (
+    <span
+      key={team.id}
+      className={
+        team.id === teams[currentBiddingTeamIndex]?.id
+          ? 'current-bidding-team' // green
+          : team.id < teams[currentBiddingTeamIndex]?.id
+          ? 'bidding-over' // orange
+          : 'bidding-eligible' // yellow
+      }
+    >
+      {team.teamname}
+    </span>
+  ))}
         </div>
       </div>
       <div className="bidding-info-right">
