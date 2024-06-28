@@ -622,7 +622,7 @@ const SelectedTeam = forwardRef((props, ref) => {
             <div className="bidding-info-container">
               <div className="bidding-info-left">
                 <p>Current Highest Bid Price: {currentHighestBidPrice}</p>
-                <div>
+                <div className="team-names-container">
                   {teams
                     .filter(
                       (team) =>
