@@ -287,6 +287,7 @@ const SelectedTeam = forwardRef((props, ref) => {
     } else {
       const nextTeamIndex = currentBiddingTeamIndex % newTeams.length;
       if (nextTeamIndex === currentHighestBiddingTeamIndex) {
+        setCurrentBiddingTeamIndex(nextTeamIndex);
         handleBidSubmit(newTeams);
       } else {
         setCurrentBiddingTeamIndex(nextTeamIndex);
