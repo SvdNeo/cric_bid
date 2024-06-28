@@ -627,7 +627,7 @@ const SelectedTeam = forwardRef((props, ref) => {
  .filter(
  (team) =>
  team.playerCount < 7 &&
- calculateMaxBidPrice(team, players, grades) >
+ calculateMaxBidPrice(team, players, grades) >=
  currentHighestBidPrice
  )
  .map((team) => (
