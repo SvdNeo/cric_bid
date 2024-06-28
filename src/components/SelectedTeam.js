@@ -184,7 +184,7 @@ const SelectedTeam = forwardRef((props, ref) => {
           return;
         }
 
-        const currentBidPrice = currentHighestBidPrice || bidPrice;
+        const currentBidPrice = isPassed ? (currentHighestBidPrice || bidPrice) : bidPrice;
         const updatedPlayer = {
           ...selectedPlayer,
           bidPrice: currentBidPrice,
@@ -606,7 +606,7 @@ const SelectedTeam = forwardRef((props, ref) => {
                 <button
                   className="submit-bid-btn disabled-hover"
                   onClick={() => handleBidSubmit(teams)}
-                  disabled={!selectedPlayer}
+                  disabled={!selectedPlayer || (teams[currentBiddingTeamIndex] && (startingBidPrice > calculateMaxBidPrice(teams[currentBiddingTeamIndex], players, grades)))}
                 >
                   Submit Bid
                 </button>
