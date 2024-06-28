@@ -88,6 +88,10 @@ button:hover {
  {
   background-color: skyblue;
  }
+ .team-names-container {
+  display: flex;
+  justify-content: space-between;
+}
 .success-popup {
   
   background-color: #4caf50;
@@ -109,12 +113,25 @@ button:hover {
   white-space: nowrap; 
   text-overflow: ellipsis
 }
+/* .current-bidding-team {
+  color: green;
+} */
+
+.bidding-over {
+  color: orange;
+  font-weight: bold;
+}
+
+.bidding-eligible {
+  color: brown;
+  font-weight: bold;
+}
 .bidding-info-left span {
   margin-right: 5px;
 }
 
 .bidding-info-left .current-bidding-team {
-  color: red;
+ color: green;
   font-weight: bold;
 }
 

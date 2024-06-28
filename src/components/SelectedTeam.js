@@ -172,9 +172,7 @@ const SelectedTeam = forwardRef((props, ref) => {
       setCurrentHighestBiddingTeamIndex(currentBiddingTeamIndex);
       let remainingTeams = tempTeams;
       if (!isPassed) {
-        remainingTeams = tempTeams.filter(
-          (team) => team.balance >= bidPrice
-        );
+        remainingTeams = tempTeams.filter((team) => team.balance >= bidPrice);
       }
       if (remainingTeams.length === 1) {
         const winningTeam = remainingTeams[0];
@@ -637,8 +635,10 @@ const SelectedTeam = forwardRef((props, ref) => {
                         key={team.id}
                         className={
                           team.id === teams[currentBiddingTeamIndex]?.id
-                            ? "current-bidding-team"
-                            : ""
+                            ? "current-bidding-team" // green
+                            : team.id < teams[currentBiddingTeamIndex]?.id
+                            ? "bidding-over" // orange
+                            : "bidding-eligible" // yellow
                         }
                       >
                         {team.teamname}
