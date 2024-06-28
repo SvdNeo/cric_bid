@@ -36,6 +36,7 @@
   padding: 10px;
   border: 1px solid #ccc;
   border-radius: 5px;
+  min-width: 270px;
 }
 
 .login-form .error {
