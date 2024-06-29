@@ -298,9 +298,7 @@ const SelectedTeam = forwardRef((props, ref) => {
         // Clear popup message after 3 seconds
         setTimeout(() => setPopupMessage(""), 3000);
 
-        setBidPrice(
-          currentHighestBidPrice ? currentHighestBidPrice + 100 : initialPrice
-        ); // Update bid price on pass
+       // Update bid price on pass
       }
     }
   };
