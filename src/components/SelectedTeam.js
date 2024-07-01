@@ -159,7 +159,7 @@ const SelectedTeam = forwardRef((props, ref) => {
     const currentTeam = tempTeams[currentBiddingTeamIndex];
 
     if (
-      currentTeam &&
+      currentTeam && !isPassed &&
       currentHighestBidPrice &&
       calculateMaxBidPrice(currentTeam, players, grades) <
         currentHighestBidPrice
@@ -202,10 +202,12 @@ const SelectedTeam = forwardRef((props, ref) => {
         const updatedTeam = {
           ...winningTeam,
           balance: winningTeam.balance - currentBidPrice,
-          playerCount: winningTeam.playerCount
-            ? winningTeam.playerCount + 1
-            : 1,
+          playerCount: winningTeam.playerCount ? winningTeam.playerCount + 1 : 1,
         };
+        
+        if (updatedTeam.balance <= 0) {
+          updatedTeam.balance = 0;
+        }
 
         setInitialTeams(
           initialTeams.map((initialTeam) => {
@@ -318,6 +320,7 @@ const SelectedTeam = forwardRef((props, ref) => {
     const basePrice = grades[player.grade]?.price || 100;
     setInitialPrice(basePrice);
     setBidPrice(basePrice);
+    setStartingBidPrice(basePrice);
     setCurrentBiddingTeamIndex(biddingStartTeamIndex);
     setIsBiddingOngoing(true);
   };
@@ -408,7 +411,9 @@ const SelectedTeam = forwardRef((props, ref) => {
   const calculateMaxBidPrice = (team, players, grades, currentBiddingPlayer) => {
     // Filter out unbid players
     const unbidPlayers = players.filter(
-      (player) => player.status === "new" || player.status === "unsold"
+      (player) =>
+        (player.status === "new" || player.status === "unsold") &&
+        player.id !== currentBiddingPlayer?.id
     );
   
     // Get the top players for the team
@@ -435,7 +440,7 @@ const SelectedTeam = forwardRef((props, ref) => {
     console.log(maxBidPrice);
   
     // Return the max bid price ensuring it is not less than 0
-    return Math.max(maxBidPrice, 0);
+    return team.balance <= 0 ? 0 : Math.max(maxBidPrice, 0);
   };
   
   
@@ -523,6 +528,14 @@ const SelectedTeam = forwardRef((props, ref) => {
 
   const gradeOrder = ["A", "B", "C", "D", "E", "F", "G"];
 
+  const test = () => {
+  return (
+    teams[currentBiddingTeamIndex] &&
+    startingBidPrice > calculateMaxBidPrice(teams[currentBiddingTeamIndex], players, grades, selectedPlayer)
+  );
+};
+
+  
   return (
     <>
       {error && <div className="error-popup">{error}</div>}
@@ -594,7 +607,7 @@ for (let price = startingBidPrice; price <= maxBidPrice; price += 100) {
                 <button
                   className="submit-bid-btn disabled-hover"
                   onClick={() => handleBidSubmit(teams)}
-                  disabled={!selectedPlayer || disableAction || (teams[currentBiddingTeamIndex] && (startingBidPrice > calculateMaxBidPrice(teams[currentBiddingTeamIndex], players, grades)))}
+                  disabled={!selectedPlayer || disableAction || test()}
                 >
                   Submit Bid
                 </button>
