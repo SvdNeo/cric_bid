@@ -14,6 +14,7 @@ import {
   writeBatch,
 } from "firebase/firestore";
 import "./SelectedTeam.css";
+import { TotpMultiFactorGenerator } from "firebase/auth/web-extension";
 
 const SelectedTeam = forwardRef((props, ref) => {
   const [initialTeams, setInitialTeams] = useState([]);
@@ -153,6 +154,7 @@ const SelectedTeam = forwardRef((props, ref) => {
         </li>
       ));
   };
+  
   const handleBidSubmit = async (tempTeams, isPassed) => {
     const currentTeam = tempTeams[currentBiddingTeamIndex];
 
@@ -225,8 +227,7 @@ const SelectedTeam = forwardRef((props, ref) => {
             currentHighestBidPrice || currentBidPrice
           }`
         );
-
-        // Clear popup message after 3 seconds
+ 
         setDisableAction(true);
         setTimeout(() => {
           setPopupMessage("");
@@ -266,14 +267,11 @@ const SelectedTeam = forwardRef((props, ref) => {
     currentTeam.hasPassed = true;
     setTeams([...newTeams]);
     if (currentHighestBiddingTeamIndex === null && newTeams.length === 0) {
-      console.log("Player unsold");
+      
       if (selectedPlayer) {
-        // Update the player's status to "unsold" locally and in the database
         const updatedPlayer = { ...selectedPlayer, status: "unsold" };
         const playerDoc = doc(db, "players", selectedPlayer.id);
         await updateDoc(playerDoc, { status: "unsold" });
-
-        // Update local state
         setPlayers(
           players.map((player) =>
             player.id === selectedPlayer.id ? updatedPlayer : player
@@ -285,8 +283,6 @@ const SelectedTeam = forwardRef((props, ref) => {
           )
         );
         setPopupMessage(`${selectedPlayer.name} is unsold.`);
-
-        // Clear popup message after 3 seconds
         setDisableAction(true);
         setTimeout(() => {
           setPopupMessage("");
@@ -308,15 +304,12 @@ const SelectedTeam = forwardRef((props, ref) => {
         setPopupMessage(
           `${teams[currentBiddingTeamIndex].teamname} has passed the bid for ${selectedPlayer.name}`
         );
-
-        // Clear popup message after 3 seconds
         setDisableAction(true);
         setTimeout(() => {
           setPopupMessage("");
           setDisableAction(false);
         }, 3000);
 
-       // Update bid price on pass
       }
     }
   };
@@ -346,8 +339,7 @@ const SelectedTeam = forwardRef((props, ref) => {
       }
 
       let player;
-      // Prioritize players who haven't been bid on
-      if (availablePlayers.length === 0 && unsoldPlayers.length > 0) {
+        if (availablePlayers.length === 0 && unsoldPlayers.length > 0) {
         const randomPlayerIndex = Math.floor(
           Math.random() * unsoldPlayers.length
         );
@@ -368,86 +360,86 @@ const SelectedTeam = forwardRef((props, ref) => {
       setCurrentBiddingTeamIndex(biddingStartTeamIndex);
     }
   };
+ 
 
-  const getTopPlayerForTeam = (team, unbidPlayers, grades) => {
+
+  const getTopPlayerForTeam = (team, unbidPlayers, grades, currentBiddingPlayer) => {
     const teamPlayerCount = team.playerCount || 0;
     const remainingPlayers = 7 - teamPlayerCount;
-
-    // Sort the unbidPlayers array based on the price in descending order to prioritize higher prices
+  
+    // Exclude the current bidding player from the top players calculation
+    unbidPlayers = unbidPlayers.filter(player => player.id !== currentBiddingPlayer?.id);
+    
     unbidPlayers.sort((a, b) => grades[b.grade].price - grades[a.grade].price);
-
     const selectedPlayers = [];
     let remainingBalance = team.balance;
-    let start = 0,
-      end = unbidPlayers.length - 1;
-
+    let start = 0, end = unbidPlayers.length - 1;
+  
     while (start <= end && selectedPlayers.length < remainingPlayers) {
-      // Try to pick the most expensive player first
       const playerPrice = grades[unbidPlayers[start].grade].price;
       if (playerPrice <= remainingBalance) {
-        // Try removing the most expensive player and check if remaining count is achievable
-        const removedPlayer =
-          selectedPlayers.length >= remainingPlayers
-            ? selectedPlayers.shift()
-            : null;
+        const removedPlayer = selectedPlayers.length >= remainingPlayers
+          ? selectedPlayers.shift()
+          : null;
         selectedPlayers.push(unbidPlayers[start]);
-        remainingBalance =
-          team.balance -
+        remainingBalance = team.balance -
           selectedPlayers.reduce(
             (sum, player) => sum + grades[player.grade].price,
             0
           );
-
+  
         if (removedPlayer) {
           const remainingCount = 7 - (teamPlayerCount + selectedPlayers.length);
           if (remainingCount > 0) {
-            selectedPlayers.unshift(removedPlayer); // Add the removed player back
+            selectedPlayers.unshift(removedPlayer);
             remainingBalance += grades[removedPlayer.grade].price;
           }
         }
         start++;
       } else {
-        // If the most expensive player can't be picked, move to the next one
         start++;
       }
     }
-
     return selectedPlayers;
   };
+  
+  
 
-  const calculateMaxBidPrice = (team, players, grades) => {
-    // Get the list of unsold and new players
+  const calculateMaxBidPrice = (team, players, grades, currentBiddingPlayer) => {
+    // Filter out unbid players
     const unbidPlayers = players.filter(
       (player) => player.status === "new" || player.status === "unsold"
     );
-
-    // Sort the unbid players by their grade price in descending order
-    //   unbidPlayers.sort((a, b) => grades[b.grade].price - grades[a.grade].price);
-    // const teamPlayerCount = team.playerCount || 0;
-    //   // Calculate the remaining players for the current team
-    //   const remainingPlayers = 7 - teamPlayerCount;
-
-    //   // Get the top R players
-    //  const topPlayers = unbidPlayers.slice(0, remainingPlayers);
-    const topPlayers = getTopPlayerForTeam(team, unbidPlayers, grades);
-    // Calculate the sum of the top R players' values
+  
+    // Get the top players for the team
+    const topPlayers = getTopPlayerForTeam(team, unbidPlayers, grades, currentBiddingPlayer);
+    console.log(topPlayers);
+  
+    // Calculate the total value of the top players
     const totalTopValues = topPlayers.reduce((sum, player) => {
       const playerGrade = grades[player.grade];
       return sum + (playerGrade ? playerGrade.price : 0);
     }, 0);
     console.log(totalTopValues);
-    // Remove the highest value player from the top players list
-    const highestValue = topPlayers[0] ? grades[topPlayers[0].grade].price : 0;
-    const remainingTopValues = totalTopValues - highestValue;
-
-    // Calculate the maximum bid price for the current team
+  
+    // Find the lowest value among the top players
+    const lowestValue = Math.min(...topPlayers.map(player => grades[player.grade].price));
+    console.log(lowestValue);
+  
+    // Calculate the remaining top values excluding the lowest value
+    const remainingTopValues = totalTopValues - lowestValue;
+    console.log(remainingTopValues);
+  
+    // Calculate the max bid price
     const maxBidPrice = team.balance - remainingTopValues;
     console.log(maxBidPrice);
-
-    // Handle negative values for maxBidPrice
+  
+    // Return the max bid price ensuring it is not less than 0
     return Math.max(maxBidPrice, 0);
   };
-
+  
+  
+  
   const resetBid = async (winningTeamId = null) => {
     setIsBiddingOngoing(false);
     const newPlayers = players.filter(
@@ -481,33 +473,25 @@ const SelectedTeam = forwardRef((props, ref) => {
 
   const handleConfirmDelete = async () => {
     if (playerToDelete) {
-      // Update the player's status to "new" and remove the teamId and teamName
-      const updatedPlayer = {
+         const updatedPlayer = {
         ...playerToDelete,
         status: "new",
         teamId: "",
         teamName: "",
         bidPrice: null,
       };
-
-      // Update the player document in the database
-      const playerDoc = doc(db, "players", playerToDelete.id);
+     const playerDoc = doc(db, "players", playerToDelete.id);
       await updateDoc(playerDoc, updatedPlayer);
-
-      // Update the team's balance and playerCount
       const teamRef = doc(db, "teams", playerToDelete.teamId);
       const teamSnapshot = await getDoc(teamRef); // Use getDoc instead of getDocs
       const teamData = teamSnapshot.data();
-
       if (teamData) {
         await updateDoc(teamRef, {
           balance: teamData.balance + playerToDelete.bidPrice,
           playerCount: teamData.playerCount - 1,
         });
       }
-
-      // Update the local state
-      setPlayers(
+       setPlayers(
         players.map((player) =>
           player.id === playerToDelete.id ? updatedPlayer : player
         )
@@ -528,8 +512,6 @@ const SelectedTeam = forwardRef((props, ref) => {
             : team
         )
       );
-
-      // Reset the playerToDelete state and close the delete confirmation popup
       setPlayerToDelete(null);
       setShowDeleteConfirmation(false);
     }
@@ -544,14 +526,9 @@ const SelectedTeam = forwardRef((props, ref) => {
   return (
     <>
       {error && <div className="error-popup">{error}</div>}
-      {/* {popupMessage && (
-        <div className="success-popup">
-          {popupMessage}
-          <button onClick={() => setPopupMessage("")}>Close</button>
-        </div>
-      )} */}
+     
       <div className="selected-team-container">
-        {/* Bidding Area */}
+ 
         <div className="bidding-area">
           <h2 className="bidding-title">Bidding Area</h2>
           <div className="bidding-section">
@@ -588,27 +565,22 @@ const SelectedTeam = forwardRef((props, ref) => {
                         if (!currentTeam) return null; // Ensure current team exists
 
                         const maxBidPrice = calculateMaxBidPrice(
-                          currentTeam,
+                          teams[currentBiddingTeamIndex],
                           players,
-                          grades
+                          grades,
+                          selectedPlayer
                         );
-
+                        
                         const startingBidPrice =
-                          bidPrice ||
-                          grades[selectedPlayer.grade]?.price ||
-                          100;
-                        const options = [];
-                        for (
-                          let price = startingBidPrice;
-                          price <= maxBidPrice;
-                          price += 100
-                        ) {
-                          options.push(
-                            <option key={price} value={price}>
-                              {price}
-                            </option>
-                          );
-                        }
+  bidPrice || grades[selectedPlayer.grade]?.price || 100;
+const options = [];
+for (let price = startingBidPrice; price <= maxBidPrice; price += 100) {
+  options.push(
+    <option key={price} value={price}>
+      {price}
+    </option>
+  );
+}
 
                         return options;
                       })()}
@@ -646,7 +618,8 @@ const SelectedTeam = forwardRef((props, ref) => {
       className={
         team.hasPassed
           ? "bidding-over" // orange
-          : calculateMaxBidPrice(team, players, grades) < currentHighestBidPrice
+          : calculateMaxBidPrice(team, players, grades, selectedPlayer) < currentHighestBidPrice
+
           ? "cannot-bid" // red
           : team.id === teams[currentBiddingTeamIndex]?.id
           ? "current-bidding-team" // green
@@ -657,16 +630,11 @@ const SelectedTeam = forwardRef((props, ref) => {
     </span>
   ))}
 </div>
-
-
-
-
               </div>
               <div className="bidding-info-right">
                 {popupMessage && (
                   <div className="success-popup">
                     {popupMessage}
-                    {/* <button onClick={() => setPopupMessage("")}>Close</button> */}
                   </div>
                 )}
               </div>
@@ -695,12 +663,12 @@ const SelectedTeam = forwardRef((props, ref) => {
               <div className="team" key={team.id}>
                 <h3 style={{ textAlign: "center" }}>{team.teamname}</h3>
                 <div className="budget">
-                  <p>
-                    Max Bid Price: {calculateMaxBidPrice(team, players, grades)}
-                  </p>
+                <p>
+  Max Bid Price: {calculateMaxBidPrice(team, players, grades, selectedPlayer)}
+</p>
+
                   <p>Balance: {team.balance}</p>
-                  {/* <p>Players: {team.playerCount}</p> */}
-                </div>
+                              </div>
                 <table border="1">
                   <thead>
                     <tr>
