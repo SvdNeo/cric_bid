@@ -1,4 +1,5 @@
 .selected-team-container {
+  overflow-x: auto;
   display: grid;
   grid-template-columns: 1fr; 
   grid-template-rows: 0.2fr 1fr 0.6fr; 
@@ -147,6 +148,9 @@ button:hover {
  color: green;
   font-weight: bold;
 }
+.current-bidding-team {
+  white-space:nowrap;
+}
 
 .success-popup button {
   margin-top: 10px;
@@ -210,6 +214,8 @@ button:hover {
   justify-content: space-around;
   width: 100%;
   align-items: center;
+  gap:20px;
+  height: 3.75rem;
 }
 
 .grades-container {
@@ -315,7 +321,9 @@ li:hover {
   padding: 2px 5px; /* Adjust the padding values as needed */
 }
 
-/* Responsive styles
+/* 
+Responsive styles
+
 @media (max-width: 992px) {
   .teams {
     grid-template-columns: 1fr 1fr 1fr 1fr;

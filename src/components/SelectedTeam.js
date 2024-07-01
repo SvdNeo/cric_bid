@@ -35,6 +35,7 @@ const SelectedTeam = forwardRef((props, ref) => {
   const [isBiddingOngoing, setIsBiddingOngoing] = useState(false);
   const [playerToDelete, setPlayerToDelete] = useState(null);
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [disableAction, setDisableAction] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -184,7 +185,7 @@ const SelectedTeam = forwardRef((props, ref) => {
           return;
         }
 
-        const currentBidPrice = currentHighestBidPrice || bidPrice;
+        const currentBidPrice = isPassed ? (currentHighestBidPrice || bidPrice) : bidPrice;
         const updatedPlayer = {
           ...selectedPlayer,
           bidPrice: currentBidPrice,
@@ -226,8 +227,11 @@ const SelectedTeam = forwardRef((props, ref) => {
         );
 
         // Clear popup message after 3 seconds
-        setTimeout(() => setPopupMessage(""), 3000);
-
+        setDisableAction(true);
+        setTimeout(() => {
+          setPopupMessage("");
+          setDisableAction(false);
+        }, 3000);
         fetchData();
         resetBid();
       } else {
@@ -237,7 +241,11 @@ const SelectedTeam = forwardRef((props, ref) => {
         );
 
         // Clear popup message after 3 seconds
-        setTimeout(() => setPopupMessage(""), 3000);
+        setDisableAction(true);
+        setTimeout(() => {
+          setPopupMessage("");
+          setDisableAction(false);
+        }, 3000);
         setBidPrice(bidPrice + 100); // Set the next bid price
         setStartingBidPrice(bidPrice + 100);
         setCurrentBiddingTeamIndex(
@@ -279,7 +287,11 @@ const SelectedTeam = forwardRef((props, ref) => {
         setPopupMessage(`${selectedPlayer.name} is unsold.`);
 
         // Clear popup message after 3 seconds
-        setTimeout(() => setPopupMessage(""), 3000);
+        setDisableAction(true);
+        setTimeout(() => {
+          setPopupMessage("");
+          setDisableAction(false);
+        }, 3000);
       }
       resetBid();
       return;
@@ -298,7 +310,11 @@ const SelectedTeam = forwardRef((props, ref) => {
         );
 
         // Clear popup message after 3 seconds
-        setTimeout(() => setPopupMessage(""), 3000);
+        setDisableAction(true);
+        setTimeout(() => {
+          setPopupMessage("");
+          setDisableAction(false);
+        }, 3000);
 
        // Update bid price on pass
       }
@@ -606,14 +622,14 @@ const SelectedTeam = forwardRef((props, ref) => {
                 <button
                   className="submit-bid-btn disabled-hover"
                   onClick={() => handleBidSubmit(teams)}
-                  disabled={!selectedPlayer}
+                  disabled={!selectedPlayer || disableAction || (teams[currentBiddingTeamIndex] && (startingBidPrice > calculateMaxBidPrice(teams[currentBiddingTeamIndex], players, grades)))}
                 >
                   Submit Bid
                 </button>
                 <button
                   className="pass-btn disabled-hover"
                   onClick={handleBidPass}
-                  disabled={!selectedPlayer}
+                  disabled={!selectedPlayer || disableAction}
                 >
                   Pass
                 </button>
@@ -622,6 +638,7 @@ const SelectedTeam = forwardRef((props, ref) => {
             <div className="bidding-info-container">
               <div className="bidding-info-left">
                 <p>Current Highest Bid Price: {currentHighestBidPrice}</p>
+
                 <div>
                 {initialTeams.map((team) => (
     <span
@@ -640,6 +657,7 @@ const SelectedTeam = forwardRef((props, ref) => {
     </span>
   ))}
 </div>
+
 
 
 
