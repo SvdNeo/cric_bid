@@ -254,6 +254,8 @@ const SelectedTeam = forwardRef((props, ref) => {
     const newTeams = teams.filter(
       (_, index) => index !== currentBiddingTeamIndex
     );
+    const currentTeam = teams[currentBiddingTeamIndex];
+    currentTeam.hasPassed = true;
     setTeams([...newTeams]);
     if (currentHighestBiddingTeamIndex === null && newTeams.length === 0) {
       console.log("Player unsold");
@@ -621,28 +623,26 @@ const SelectedTeam = forwardRef((props, ref) => {
               <div className="bidding-info-left">
                 <p>Current Highest Bid Price: {currentHighestBidPrice}</p>
                 <div>
-                  {teams
-                    .filter(
-                      (team) =>
-                        team.playerCount < 7 &&
-                        calculateMaxBidPrice(team, players, grades) >
-                          currentHighestBidPrice
-                    )
-                    .map((team) => (
-                      <span
-                        key={team.id}
-                        className={
-                          team.id === teams[currentBiddingTeamIndex]?.id
-                            ? "current-bidding-team" // green
-                            : team.id < teams[currentBiddingTeamIndex]?.id
-                            ? "bidding-over" // orange
-                            : "bidding-eligible" // yellow
-                        }
-                      >
-                        {team.teamname}
-                      </span>
-                    ))}
-                </div>
+                {initialTeams.map((team) => (
+    <span
+      key={team.id}
+      className={
+        team.hasPassed
+          ? "bidding-over" // orange
+          : calculateMaxBidPrice(team, players, grades) < currentHighestBidPrice
+          ? "cannot-bid" // red
+          : team.id === teams[currentBiddingTeamIndex]?.id
+          ? "current-bidding-team" // green
+          : "bidding-eligible" // yellow
+      }
+    >
+      {team.teamname}
+    </span>
+  ))}
+</div>
+
+
+
               </div>
               <div className="bidding-info-right">
                 {popupMessage && (

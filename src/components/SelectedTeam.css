@@ -5,10 +5,11 @@
   gap: 10px; 
   padding: 10px;
   height: 100vh; 
+  overflow-x: auto;
 }
 .teams-container table td {
   white-space: nowrap;
-  overflow: hidden;
+  /* overflow: hidden; */
   text-overflow: ellipsis;
   max-width: 120px; /* Adjust this value as needed */
 }
@@ -80,6 +81,21 @@ button:disabled:hover {
 .disabled-hover:disabled:hover {
   background-color: inherit;
 }
+.cannot-bid {
+  color: red;
+  font-weight: bold;
+}
+
+.bidding-info-left .highest-bid-team {
+  color: green;
+  font-weight: bold;
+}
+.bidding-eligible {
+  color: yellow;
+  font-weight: bold;
+}
+
+
 
 button:hover {
   background-color: grey;
@@ -122,10 +138,7 @@ button:hover {
   font-weight: bold;
 }
 
-.bidding-eligible {
-  color: brown;
-  font-weight: bold;
-}
+
 .bidding-info-left span {
   margin-right: 5px;
 }
@@ -153,7 +166,7 @@ button:hover {
 
 .teams-container {
   padding: 10px;
-  overflow-x: hidden; /* Hide horizontal overflow */
+  /* overflow-x: hidden; Hide horizontal overflow */
 }
 
 .reset {
@@ -302,7 +315,7 @@ li:hover {
   padding: 2px 5px; /* Adjust the padding values as needed */
 }
 
-/* Responsive styles */
+/* Responsive styles
 @media (max-width: 992px) {
   .teams {
     grid-template-columns: 1fr 1fr 1fr 1fr;
@@ -400,4 +413,4 @@ li:hover {
     padding: 6px 12px;
     font-size: 12px;
   }
-}
+} */
