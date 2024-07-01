@@ -216,6 +216,7 @@ button:hover {
   align-items: center;
   gap:20px;
   height: 3.75rem;
+  white-space: nowrap;
 }
 
 .grades-container {
@@ -420,5 +421,8 @@ Responsive styles
   .btn-reset {
     padding: 6px 12px;
     font-size: 12px;
-  }
 } */
+.teams-container table td, 
+.teams-container table th {
+  line-height: 30px; /* Set the row height */
+}
