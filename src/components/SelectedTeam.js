@@ -645,12 +645,17 @@ for (let price = startingBidPrice; price <= maxBidPrice; price += 100) {
 </div>
               </div>
               <div className="bidding-info-right">
-                {popupMessage && (
-                  <div className="success-popup">
-                    {popupMessage}
-                  </div>
-                )}
-              </div>
+  {popupMessage && (
+    <div
+      className={`success-popup ${
+        popupMessage.includes("has won the bid") ? "winning-bid" : ""
+      }`}
+    >
+      {popupMessage}
+    </div>
+  )}
+</div>
+
             </div>
           </div>
         </div>

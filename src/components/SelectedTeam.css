@@ -8,6 +8,11 @@
   height: 100vh; 
   overflow-x: auto;
 }
+.success-popup.winning-bid {
+  background-color: goldenrod; /* or any other color you prefer */
+  color: white; /* adjust the text color as needed */
+}
+
 .teams-container table td {
   white-space: nowrap;
   /* overflow: hidden; */
