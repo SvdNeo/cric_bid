@@ -415,7 +415,7 @@ const SelectedTeam = forwardRef((props, ref) => {
         (player.status === "new" || player.status === "unsold") &&
         player.id !== currentBiddingPlayer?.id
     );
-  
+  console.log(currentBiddingPlayer)
     // Get the top players for the team
     const topPlayers = getTopPlayerForTeam(team, unbidPlayers, grades, currentBiddingPlayer);
     console.log(topPlayers);
@@ -428,7 +428,7 @@ const SelectedTeam = forwardRef((props, ref) => {
     console.log(totalTopValues);
   
     // Find the lowest value among the top players
-    const lowestValue = Math.min(...topPlayers.map(player => grades[player.grade].price));
+    const lowestValue = topPlayers.length === 0 ? 0 : Math.min(...topPlayers.map((player) => grades[player.grade].price));
     console.log(lowestValue);
   
     // Calculate the remaining top values excluding the lowest value
