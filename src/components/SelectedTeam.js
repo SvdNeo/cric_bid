@@ -625,17 +625,16 @@ for (let price = startingBidPrice; price <= maxBidPrice; price += 100) {
                 <p>Current Highest Bid Price: {currentHighestBidPrice}</p>
 
                 <div>
-                {initialTeams.map((team) => (
+  {initialTeams.map((team) => (
     <span
       key={team.id}
       className={
         team.hasPassed
           ? "bidding-over" // orange
-          : calculateMaxBidPrice(team, players, grades, selectedPlayer) < currentHighestBidPrice
-
+          : team.id === teams[currentHighestBiddingTeamIndex]?.id
+          ? "current-highest-bidder" // green
+          : calculateMaxBidPrice(team, players, grades, selectedPlayer) <= currentHighestBidPrice
           ? "cannot-bid" // red
-          : team.id === teams[currentBiddingTeamIndex]?.id
-          ? "current-bidding-team" // green
           : "bidding-eligible" // yellow
       }
     >

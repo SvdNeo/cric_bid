@@ -82,18 +82,38 @@ button:disabled:hover {
 .disabled-hover:disabled:hover {
   background-color: inherit;
 }
-.cannot-bid {
-  color: red;
-  font-weight: bold;
+.bidding-over {
+  background-color: orange;
+  color: black;
+  padding: 5px;
+  border-radius: 4px;
 }
 
-.bidding-info-left .highest-bid-team {
-  color: green;
-  font-weight: bold;
+.cannot-bid {
+  background-color: red;
+  color: black;
+  padding: 5px;
+  border-radius: 4px;
 }
+
+.bidding-info-left .current-bidding-team {
+  background-color: green;
+  color: black;
+  padding: 5px;
+  border-radius: 4px;
+}
+.current-highest-bidder {
+  background-color: green;
+  color: black;
+  padding: 5px;
+  border-radius: 4px;
+}
+
 .bidding-eligible {
-  color: yellow;
-  font-weight: bold;
+  background-color: yellow;
+  color: black;
+  padding: 5px;
+  border-radius: 4px;
 }
 
 
@@ -134,20 +154,13 @@ button:hover {
   color: green;
 } */
 
-.bidding-over {
-  color: orange;
-  font-weight: bold;
-}
 
 
 .bidding-info-left span {
   margin-right: 5px;
 }
 
-.bidding-info-left .current-bidding-team {
- color: green;
-  font-weight: bold;
-}
+
 .current-bidding-team {
   white-space:nowrap;
 }
