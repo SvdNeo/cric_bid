@@ -635,7 +635,9 @@ for (let price = startingBidPrice; price <= maxBidPrice; price += 100) {
           ? "current-highest-bidder" // green
           : calculateMaxBidPrice(team, players, grades, selectedPlayer) <= currentHighestBidPrice
           ? "cannot-bid" // red
-          : "bidding-eligible" // yellow
+          : calculateMaxBidPrice(team, players, grades, selectedPlayer) > currentHighestBidPrice
+          ? "bidding-eligible" // yellow
+          : "cannot-bid" // red
       }
     >
       {team.teamname}
