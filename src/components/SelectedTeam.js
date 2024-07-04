@@ -365,18 +365,14 @@ const SelectedTeam = forwardRef((props, ref) => {
   };
  
 
+
   const getTopPlayerForTeam = (team, unbidPlayers, grades, currentBiddingPlayer) => {
     const teamPlayerCount = team.playerCount || 0;
     const remainingPlayers = 7 - teamPlayerCount;
   
     // Exclude the current bidding player from the top players calculation
     unbidPlayers = unbidPlayers.filter(player => player.id !== currentBiddingPlayer?.id);
-  
-    // If the current bidding player is the only player left, include it in the top players list
-    if (unbidPlayers.length === 0 && currentBiddingPlayer) {
-      unbidPlayers.push(currentBiddingPlayer);
-    }
-  
+    
     unbidPlayers.sort((a, b) => grades[b.grade].price - grades[a.grade].price);
     const selectedPlayers = [];
     let remainingBalance = team.balance;
