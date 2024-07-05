@@ -97,7 +97,8 @@ import React, {
   teams.forEach((team) => {
   if (team && team.id) {
   const teamRef = doc(db, "teams", team.id);
-  batch.update(teamRef, { balance: 10000, playerCount: 0 });
+  batch.update(teamRef, { balance: 10000, playerCount: 0, hasPassed: false });
+
   } else {
   throw new Error(`Invalid team data: ${JSON.stringify(team)}`);
   }
@@ -156,38 +157,40 @@ import React, {
   };
  
   const handleBidSubmit = async (tempTeams, isPassed) => {
-  const currentTeam = tempTeams[currentBiddingTeamIndex];
- 
-  if (
-  currentTeam && !isPassed &&
-  currentHighestBidPrice &&
-  calculateMaxBidPrice(currentTeam, players, grades) <
-  currentHighestBidPrice
-  ) {
-  setCurrentBiddingTeamIndex(
-  (prevIndex) => (prevIndex + 1) % tempTeams.length
-  );
-  handleBidPass();
-  return;
-  }
- 
-  if (selectedPlayer && bidPrice) {
-  setCurrentHighestBiddingTeamIndex(currentBiddingTeamIndex);
-  let remainingTeams = tempTeams;
-  if (!isPassed) {
-  remainingTeams = tempTeams.filter((team) => team.balance > bidPrice);
-  }
-  if (remainingTeams.length === 1) {
-  const winningTeam = remainingTeams[0];
-  const playersOnWinningTeam = players.filter(
-  (player) => player.teamId === winningTeam.id
-  );
-  if (playersOnWinningTeam.length >= 7) {
-  setError("Team already has 7 players. Cannot add more.");
-  return;
-  }
- 
-  const currentBidPrice = isPassed ? (currentHighestBidPrice || bidPrice) : bidPrice;
+    const currentTeam = tempTeams[currentBiddingTeamIndex];
+
+    if (
+      currentTeam && 
+      !isPassed &&
+      currentHighestBidPrice &&
+      calculateMaxBidPrice(currentTeam, players, grades, selectedPlayer) < currentHighestBidPrice
+    ) {
+      setCurrentBiddingTeamIndex((prevIndex) => (prevIndex + 1) % tempTeams.length);
+      handleBidPass();
+      return;
+    }
+  
+    if (selectedPlayer && bidPrice) {
+      setCurrentHighestBiddingTeamIndex(currentBiddingTeamIndex);
+      let remainingTeams = tempTeams;
+      if (!isPassed) {
+        remainingTeams = tempTeams.filter((team) => 
+          calculateMaxBidPrice(team, players, grades, selectedPlayer) >= bidPrice
+        );
+      }
+  
+      if (remainingTeams.length === 1) {
+        const winningTeam = remainingTeams[0];
+        const playersOnWinningTeam = players.filter(
+          (player) => player.teamId === winningTeam.id
+        );
+        if (playersOnWinningTeam.length >= 7) {
+          setError("Team already has 7 players. Cannot add more.");
+          return;
+        }
+  
+        const currentBidPrice = isPassed ? (currentHighestBidPrice || bidPrice) : bidPrice;
+  
   const updatedPlayer = {
   ...selectedPlayer,
   bidPrice: currentBidPrice,
@@ -268,17 +271,28 @@ import React, {
  
   const handleBidPass = async () => {
     let newTeams = teams.filter((_, index) => index !== currentBiddingTeamIndex);
-    const currentTeam = teams[currentBiddingTeamIndex];
-    currentTeam.hasPassed = true;
-  
-    // Filter out teams that are not eligible to bid
-    newTeams = newTeams.filter(
-      (team) =>
-        calculateMaxBidPrice(team, players, grades, selectedPlayer) >
-        currentHighestBidPrice
-    );
-  
-    setTeams([...newTeams]);
+  const currentTeam = teams[currentBiddingTeamIndex];
+  currentTeam.hasPassed = true;
+
+  newTeams = newTeams.filter(
+    (team) =>
+      calculateMaxBidPrice(team, players, grades, selectedPlayer) >
+      currentHighestBidPrice
+  );
+
+  setTeams([...newTeams]);
+
+  if (newTeams.length === 0) {
+    if (currentHighestBiddingTeamIndex !== null) {
+      // If there's a highest bidder, they win at their last bid price
+      handleBidSubmit([teams[currentHighestBiddingTeamIndex]], true);
+    } else {
+      // If no one has bid, the player is unsold
+      // ... (code to mark player as unsold)
+      resetBid();
+    }
+    return;
+  }
   
     if (currentHighestBiddingTeamIndex === null && newTeams.length === 0) {
       if (selectedPlayer) {
