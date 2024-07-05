@@ -190,14 +190,13 @@ import React, {
         }
   
         const currentBidPrice = isPassed ? (currentHighestBidPrice || bidPrice) : bidPrice;
-  
-  const updatedPlayer = {
-  ...selectedPlayer,
-  bidPrice: currentBidPrice,
-  teamName: winningTeam.teamname,
-  teamId: winningTeam.id,
-  status: "sold",
-  };
+        const updatedPlayer = {
+          ...selectedPlayer,
+          bidPrice: currentBidPrice,
+          teamName: winningTeam.teamname,
+          teamId: winningTeam.id,
+          status: "sold",
+        };
  
   const playerDoc = doc(db, "players", selectedPlayer.id);
   await updateDoc(playerDoc, updatedPlayer);
@@ -226,9 +225,7 @@ import React, {
   await updateDoc(teamDoc, updatedTeam);
  
   setPopupMessage(
-  `${winningTeam.teamname} has won the bid for ${selectedPlayer.name
-  } for an Auction Price of ${currentHighestBidPrice || currentBidPrice
-  }`
+    `${winningTeam.teamname} has won the bid for ${selectedPlayer.name} for an Auction Price of ${currentBidPrice}`
   );
  
   setDisableAction(true);
