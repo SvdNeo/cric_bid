@@ -251,7 +251,7 @@ import React, {
   setBidPrice(nextBidPrice); // Set the next bid price
   setStartingBidPrice(nextBidPrice);
   let nextTeamIndex = (currentBiddingTeamIndex + 1) % tempTeams.length;
-  while (calculateMaxBidPrice(tempTeams[nextTeamIndex], players, grades, selectedPlayer) < nextBidPrice) {
+  while (calculateMaxBidPrice(tempTeams[nextTeamIndex], players, grades, selectedPlayer) < nextBidPrice || (nextTeamIndex === currentBiddingTeamIndex)) {
   if (nextTeamIndex === currentBiddingTeamIndex) {
   handleBidSubmit([currentTeam]);
   return;
