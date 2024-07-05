@@ -355,6 +355,7 @@ import React, {
   setBidPrice(basePrice);
   setStartingBidPrice(basePrice);
   setCurrentBiddingTeamIndex(biddingStartTeamIndex);
+  setCurrentHighestBidPrice(basePrice);
   setIsBiddingOngoing(true);
   };
  
@@ -552,11 +553,13 @@ import React, {
   );
   setPlayerToDelete(null);
   setShowDeleteConfirmation(false);
+  await fetchData();
   }
   };
   const handleCancelDelete = () => {
   setPlayerToDelete(null);
   setShowDeleteConfirmation(false);
+  
   };
  
   const gradeOrder = ["A", "B", "C", "D", "E", "F", "G"];
@@ -655,7 +658,7 @@ import React, {
   </div>
   <div className="bidding-info-container">
   <div className="bidding-info-left">
-  <p>Current Highest Bid Price: {currentHighestBidPrice}</p>
+  <p className="current-highest-bid">Current Highest Bid Price: {currentHighestBidPrice}</p>
  
   <div>
   {initialTeams.map((team) => (
