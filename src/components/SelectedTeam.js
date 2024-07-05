@@ -511,51 +511,56 @@ import React, {
   };
  
   const handleConfirmDelete = async () => {
-  if (playerToDelete) {
-  const updatedPlayer = {
-  ...playerToDelete,
-  status: "new",
-  teamId: "",
-  teamName: "",
-  bidPrice: null,
+
+    if (playerToDelete) {
+      const updatedPlayer = {
+        ...playerToDelete,
+        status: "new",
+        teamId: "",
+        teamName: "",
+        bidPrice: null,
+      };
+      const playerDoc = doc(db, "players", playerToDelete.id);
+      await updateDoc(playerDoc, updatedPlayer);
+      const teamRef = doc(db, "teams", playerToDelete.teamId);
+      const teamSnapshot = await getDoc(teamRef); // Use getDoc instead of getDocs
+      const teamData = teamSnapshot.data();
+      if (teamData) {
+        await updateDoc(teamRef, {
+          balance: teamData.balance + playerToDelete.bidPrice,
+          playerCount: teamData.playerCount - 1,
+        });
+      }
+      setPlayers(
+        players.map((player) =>
+          player.id === playerToDelete.id ? updatedPlayer : player
+        )
+      );
+      setInitialPlayers(
+        initialPlayers.map((player) =>
+          player.id === playerToDelete.id ? updatedPlayer : player
+        )
+      );
+      setInitialTeams(
+        initialTeams.map((team) =>
+          team.id === playerToDelete.teamId
+            ? {
+                ...team,
+                balance: teamData.balance + playerToDelete.bidPrice,
+                playerCount: teamData.playerCount - 1,
+              }
+            : team
+        )
+      );
+      setPlayerToDelete(null);
+      setShowDeleteConfirmation(false);
+  
+      // Refetch data after deleting a player
+      await fetchData();
+    }
+
   };
-  const playerDoc = doc(db, "players", playerToDelete.id);
-  await updateDoc(playerDoc, updatedPlayer);
-  const teamRef = doc(db, "teams", playerToDelete.teamId);
-  const teamSnapshot = await getDoc(teamRef); // Use getDoc instead of getDocs
-  const teamData = teamSnapshot.data();
-  if (teamData) {
-  await updateDoc(teamRef, {
-  balance: teamData.balance + playerToDelete.bidPrice,
-  playerCount: teamData.playerCount - 1,
-  });
-  }
-  setPlayers(
-  players.map((player) =>
-  player.id === playerToDelete.id ? updatedPlayer : player
-  )
-  );
-  setInitialPlayers(
-  initialPlayers.map((player) =>
-  player.id === playerToDelete.id ? updatedPlayer : player
-  )
-  );
-  setInitialTeams(
-  initialTeams.map((team) =>
-  team.id === playerToDelete.teamId
-  ? {
-  ...team,
-  balance: teamData.balance + playerToDelete.bidPrice,
-  playerCount: teamData.playerCount - 1,
-  }
-  : team
-  )
-  );
-  setPlayerToDelete(null);
-  setShowDeleteConfirmation(false);
-  await fetchData();
-  }
-  };
+  
   const handleCancelDelete = () => {
   setPlayerToDelete(null);
   setShowDeleteConfirmation(false);
@@ -664,22 +669,24 @@ import React, {
   {initialTeams.map((team) => (
 
 
-    <span
-      key={team.id}
-      className={
-        team.hasPassed
-          ? "bidding-over" // orange
-          : team.id === teams[currentHighestBiddingTeamIndex]?.id
-          ? "current-highest-bidder" // green
-          : calculateMaxBidPrice(team, players, grades, selectedPlayer) <= currentHighestBidPrice
-          ? "cannot-bid" // red
-          : calculateMaxBidPrice(team, players, grades, selectedPlayer) > currentHighestBidPrice
-          ? "bidding-eligible" // yellow
-          : "cannot-bid" // red
-      }
-    >
-      {team.teamname}
-    </span>
+<span
+key={team.id}
+className={
+  team.playerCount === 7
+    ? "cannot-bid" // red
+    : team.hasPassed
+    ? "bidding-over" // orange
+    : team.id === teams[currentHighestBiddingTeamIndex]?.id
+    ? "current-highest-bidder" // green
+    : calculateMaxBidPrice(team, players, grades, selectedPlayer) <= currentHighestBidPrice
+    ? "cannot-bid" // red
+    : calculateMaxBidPrice(team, players, grades, selectedPlayer) > currentHighestBidPrice
+    ? "bidding-eligible" // yellow
+    : "cannot-bid" // red
+}
+>
+{team.teamname}
+</span>
 
   ))}
   </div>
