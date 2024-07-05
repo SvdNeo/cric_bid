@@ -664,22 +664,24 @@ import React, {
   {initialTeams.map((team) => (
 
 
-    <span
-      key={team.id}
-      className={
-        team.hasPassed
-          ? "bidding-over" // orange
-          : team.id === teams[currentHighestBiddingTeamIndex]?.id
-          ? "current-highest-bidder" // green
-          : calculateMaxBidPrice(team, players, grades, selectedPlayer) <= currentHighestBidPrice
-          ? "cannot-bid" // red
-          : calculateMaxBidPrice(team, players, grades, selectedPlayer) > currentHighestBidPrice
-          ? "bidding-eligible" // yellow
-          : "cannot-bid" // red
-      }
-    >
-      {team.teamname}
-    </span>
+<span
+key={team.id}
+className={
+  team.playerCount === 7
+    ? "cannot-bid" // red
+    : team.hasPassed
+    ? "bidding-over" // orange
+    : team.id === teams[currentHighestBiddingTeamIndex]?.id
+    ? "current-highest-bidder" // green
+    : calculateMaxBidPrice(team, players, grades, selectedPlayer) <= currentHighestBidPrice
+    ? "cannot-bid" // red
+    : calculateMaxBidPrice(team, players, grades, selectedPlayer) > currentHighestBidPrice
+    ? "bidding-eligible" // yellow
+    : "cannot-bid" // red
+}
+>
+{team.teamname}
+</span>
 
   ))}
   </div>
