@@ -349,53 +349,63 @@ import React, {
   };
   
   const handlePlayerDoubleClick = (player) => {
-  setSelectedPlayer(player);
-  const basePrice = grades[player.grade]?.price || 100;
-  setInitialPrice(basePrice);
-  setBidPrice(basePrice);
-  setStartingBidPrice(basePrice);
-  setCurrentBiddingTeamIndex(biddingStartTeamIndex);
-  setCurrentHighestBidPrice(basePrice);
-  setIsBiddingOngoing(true);
+
+    setSelectedPlayer(player);
+    const basePrice = grades[player.grade]?.price || 100;
+    setInitialPrice(basePrice);
+    setBidPrice(basePrice);
+    setStartingBidPrice(basePrice);
+    setCurrentBiddingTeamIndex(biddingStartTeamIndex);
+    setIsBiddingOngoing(true);
+  
+    // Reset hasPassed property for all teams
+    const updatedTeams = initialTeams.map((team) => ({
+      ...team,
+      hasPassed: false,
+    }));
+    setInitialTeams(updatedTeams);
+    setTeams(updatedTeams.filter((team) => team.playerCount !== undefined && team.playerCount < 7));
+
+ 
   };
- 
+  
   const handleBidStart = () => {
-  setIsBiddingOngoing(true);
- 
-  if (!selectedPlayer) {
-  const availablePlayers = players.filter(
-  (player) => player.status === "new"
-  );
-  const unsoldPlayers = players.filter(
-  (player) => player.status === "unsold"
-  );
- 
-  if (availablePlayers.length === 0 && unsoldPlayers.length === 0) {
-  setError("No players available for bidding.");
-  return;
-  }
- 
-  let player;
-  if (availablePlayers.length === 0 && unsoldPlayers.length > 0) {
-  const randomPlayerIndex = Math.floor(
-  Math.random() * unsoldPlayers.length
-  );
-  player = unsoldPlayers[randomPlayerIndex];
-  } else {
-  const randomPlayerIndex = Math.floor(
-  Math.random() * availablePlayers.length
-  );
-  player = availablePlayers[randomPlayerIndex];
-  }
- 
-  setSelectedPlayer(player);
-  const basePrice = grades[player.grade]?.price || 100;
-  setInitialPrice(basePrice);
-  setBidPrice(basePrice);
-  setCurrentHighestBidPrice(basePrice);
-  setStartingBidPrice(basePrice);
-  setCurrentBiddingTeamIndex(biddingStartTeamIndex);
-  }
+    setIsBiddingOngoing(true);
+  
+    if (!selectedPlayer) {
+      const availablePlayers = players.filter((player) => player.status === "new");
+      const unsoldPlayers = players.filter((player) => player.status === "unsold");
+  
+      if (availablePlayers.length === 0 && unsoldPlayers.length === 0) {
+        setError("No players available for bidding.");
+        return;
+      }
+  
+      let player;
+      if (availablePlayers.length === 0 && unsoldPlayers.length > 0) {
+        const randomPlayerIndex = Math.floor(Math.random() * unsoldPlayers.length);
+        player = unsoldPlayers[randomPlayerIndex];
+      } else {
+        const randomPlayerIndex = Math.floor(Math.random() * availablePlayers.length);
+        player = availablePlayers[randomPlayerIndex];
+      }
+  
+      setSelectedPlayer(player);
+      const basePrice = grades[player.grade]?.price || 100;
+      setInitialPrice(basePrice);
+      setBidPrice(basePrice);
+      setCurrentHighestBidPrice(basePrice);
+      setStartingBidPrice(basePrice);
+      setCurrentBiddingTeamIndex(biddingStartTeamIndex);
+  
+      // Reset hasPassed property for all teams
+      const updatedTeams = initialTeams.map((team) => ({
+        ...team,
+        hasPassed: false,
+      }));
+      setInitialTeams(updatedTeams);
+      setTeams(updatedTeams.filter((team) => team.playerCount !== undefined && team.playerCount < 7));
+    }
   };
  
  
