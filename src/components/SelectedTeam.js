@@ -349,6 +349,7 @@ import React, {
   };
   
   const handlePlayerDoubleClick = (player) => {
+
     setSelectedPlayer(player);
     const basePrice = grades[player.grade]?.price || 100;
     setInitialPrice(basePrice);
@@ -364,6 +365,8 @@ import React, {
     }));
     setInitialTeams(updatedTeams);
     setTeams(updatedTeams.filter((team) => team.playerCount !== undefined && team.playerCount < 7));
+
+ 
   };
   
   const handleBidStart = () => {
@@ -518,6 +521,7 @@ import React, {
   };
  
   const handleConfirmDelete = async () => {
+
     if (playerToDelete) {
       const updatedPlayer = {
         ...playerToDelete,
@@ -564,11 +568,13 @@ import React, {
       // Refetch data after deleting a player
       await fetchData();
     }
+
   };
   
   const handleCancelDelete = () => {
   setPlayerToDelete(null);
   setShowDeleteConfirmation(false);
+  
   };
  
   const gradeOrder = ["A", "B", "C", "D", "E", "F", "G"];
@@ -667,7 +673,7 @@ import React, {
   </div>
   <div className="bidding-info-container">
   <div className="bidding-info-left">
-  <p>Current Highest Bid Price: {currentHighestBidPrice}</p>
+  <p className="current-highest-bid">Current Highest Bid Price: {currentHighestBidPrice}</p>
  
   <div>
   {initialTeams.map((team) => (

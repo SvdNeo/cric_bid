@@ -83,7 +83,9 @@ button:disabled {
 button:disabled:hover {
   background-color: inherit;
 }
-
+.current-highest-bid{
+  height: 30px;
+}
 .disabled-hover:disabled:hover {
   background-color: inherit;
 }
