@@ -476,7 +476,7 @@ import React, {
   console.log(lowestValue);
  
   // Calculate the remaining top values excluding the lowest value
-  const remainingTopValues = totalTopValues - lowestValue;
+  const remainingTopValues = totalTopValues === lowestValue ? lowestValue : totalTopValues - lowestValue;
   console.log(remainingTopValues);
  
   // Calculate the max bid price
