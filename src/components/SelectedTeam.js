@@ -266,7 +266,7 @@ import React, {
   }
   };
  
-  const handleBidPass = async () => {
+   const handleBidPass = async () => {
     let newTeams = teams.filter((_, index) => index !== currentBiddingTeamIndex);
   const currentTeam = teams[currentBiddingTeamIndex];
   currentTeam.hasPassed = true;
@@ -284,6 +284,32 @@ import React, {
       // If there's a highest bidder, they win at their last bid price
       handleBidSubmit([teams[currentHighestBiddingTeamIndex]], true);
     } else {
+      // If no one has bid, the player is unsold
+      const updatedPlayer = { ...selectedPlayer, status: "unsold" };
+      const playerDoc = doc(db, "players", selectedPlayer.id);
+      await updateDoc(playerDoc, { status: "unsold" });
+      setPlayers(
+        players.map((player) =>
+          player.id === selectedPlayer.id ? updatedPlayer : player
+        )
+      );
+      setInitialPlayers(
+        initialPlayers.map((player) =>
+          player.id === selectedPlayer.id ? updatedPlayer : player
+        )
+      );
+      setPopupMessage(`${selectedPlayer.name} is unsold.`);
+      setDisableAction(true);
+      setTimeout(() => {
+        setPopupMessage("");
+        setDisableAction(false);
+      }, 3000);
+    }
+    resetBid();
+    return;
+  }
+  
+    if (currentHighestBiddingTeamIndex === null && newTeams.length === 0) {
       if (selectedPlayer) {
         const updatedPlayer = { ...selectedPlayer, status: "unsold" };
         const playerDoc = doc(db, "players", selectedPlayer.id);
@@ -308,8 +334,8 @@ import React, {
       resetBid();
       return;
     }
-  }
-      if (newTeams.length === 1 && currentHighestBiddingTeamIndex !== null) {
+  
+    if (newTeams.length === 1 && currentHighestBiddingTeamIndex !== null) {
       handleBidSubmit(newTeams, true);
     } else {
       let nextTeamIndex = currentBiddingTeamIndex % newTeams.length;
@@ -339,7 +365,6 @@ import React, {
       }
     }
   };
-  
   const handlePlayerDoubleClick = (player) => {
 
     setSelectedPlayer(player);
@@ -472,7 +497,7 @@ import React, {
   console.log(remainingTopValues);
  
   // Calculate the max bid price
-  const maxBidPrice = team.balance - remainingTopValues;
+  const maxBidPrice = team.balance === remainingTopValues ? team.balance : team.balance - remainingTopValues;
   console.log(maxBidPrice);
  
   // Return the max bid price ensuring it is not less than 0
