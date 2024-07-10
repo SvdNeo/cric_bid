@@ -285,9 +285,27 @@ import React, {
       handleBidSubmit([teams[currentHighestBiddingTeamIndex]], true);
     } else {
       // If no one has bid, the player is unsold
-      // ... (code to mark player as unsold)
-      resetBid();
+      const updatedPlayer = { ...selectedPlayer, status: "unsold" };
+      const playerDoc = doc(db, "players", selectedPlayer.id);
+      await updateDoc(playerDoc, { status: "unsold" });
+      setPlayers(
+        players.map((player) =>
+          player.id === selectedPlayer.id ? updatedPlayer : player
+        )
+      );
+      setInitialPlayers(
+        initialPlayers.map((player) =>
+          player.id === selectedPlayer.id ? updatedPlayer : player
+        )
+      );
+      setPopupMessage(`${selectedPlayer.name} is unsold.`);
+      setDisableAction(true);
+      setTimeout(() => {
+        setPopupMessage("");
+        setDisableAction(false);
+      }, 3000);
     }
+    resetBid();
     return;
   }
   
@@ -476,11 +494,11 @@ import React, {
   console.log(lowestValue);
  
   // Calculate the remaining top values excluding the lowest value
-  const remainingTopValues = totalTopValues - lowestValue;
+  const remainingTopValues = totalTopValues === lowestValue ? lowestValue : totalTopValues - lowestValue;
   console.log(remainingTopValues);
  
   // Calculate the max bid price
-  const maxBidPrice = team.balance - remainingTopValues;
+  const maxBidPrice = team.balance === remainingTopValues ? team.balance : team.balance - remainingTopValues;
   console.log(maxBidPrice);
  
   // Return the max bid price ensuring it is not less than 0
