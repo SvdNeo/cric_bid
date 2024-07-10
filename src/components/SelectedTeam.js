@@ -266,7 +266,7 @@ import React, {
   }
   };
  
-  const handleBidPass = async () => {
+   const handleBidPass = async () => {
     let newTeams = teams.filter((_, index) => index !== currentBiddingTeamIndex);
   const currentTeam = teams[currentBiddingTeamIndex];
   currentTeam.hasPassed = true;
@@ -365,7 +365,6 @@ import React, {
       }
     }
   };
-  
   const handlePlayerDoubleClick = (player) => {
 
     setSelectedPlayer(player);
