@@ -497,7 +497,7 @@ import React, {
   console.log(remainingTopValues);
  
   // Calculate the max bid price
-  const maxBidPrice = team.balance === remainingTopValues ? team.balance : team.balance - remainingTopValues;
+  const maxBidPrice = team.playerCount === 6 ? team.balance : team.balance - remainingTopValues;
   console.log(maxBidPrice);
  
   // Return the max bid price ensuring it is not less than 0
