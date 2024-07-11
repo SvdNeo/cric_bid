@@ -493,7 +493,13 @@ import React, {
   console.log(lowestValue);
  
   // Calculate the remaining top values excluding the lowest value
-  const remainingTopValues = totalTopValues === lowestValue ? lowestValue : totalTopValues - lowestValue;
+ const remainingTopValues = 
+  (unbidPlayers.length === 2 && team.playerCount === 4) 
+    ? totalTopValues 
+    : (totalTopValues === lowestValue 
+        ? lowestValue 
+        : totalTopValues - lowestValue);
+
   console.log(remainingTopValues);
  
   // Calculate the max bid price
@@ -705,12 +711,13 @@ className={
     ? "bidding-over" // orange
     : team.id === teams[currentHighestBiddingTeamIndex]?.id
     ? "current-highest-bidder" // green
-    : calculateMaxBidPrice(team, players, grades, selectedPlayer) <= currentHighestBidPrice
+    : calculateMaxBidPrice(team, players, grades, selectedPlayer) < bidPrice
     ? "cannot-bid" // red
-    : calculateMaxBidPrice(team, players, grades, selectedPlayer) > currentHighestBidPrice
-    ? "bidding-eligible" // yellow
-    : "cannot-bid" // red
-}
+    : "bidding-eligible"
+//     : calculateMaxBidPrice(team, players, grades, selectedPlayer) > currentHighestBidPrice
+//     ? "bidding-eligible" // yellow
+//     : "cannot-bid" // red
+ }
 >
 {team.teamname}
 </span>
