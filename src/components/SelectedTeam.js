@@ -371,6 +371,7 @@ import React, {
     const basePrice = grades[player.grade]?.price || 100;
     setInitialPrice(basePrice);
     setBidPrice(basePrice);
+    setCurrentHighestBidPrice(basePrice)
     setStartingBidPrice(basePrice);
     setCurrentBiddingTeamIndex(biddingStartTeamIndex);
     setIsBiddingOngoing(true);
