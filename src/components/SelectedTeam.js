@@ -266,51 +266,23 @@ import React, {
   }
   };
  
-   const handleBidPass = async () => {
+  const handleBidPass = async () => {
     let newTeams = teams.filter((_, index) => index !== currentBiddingTeamIndex);
-  const currentTeam = teams[currentBiddingTeamIndex];
-  currentTeam.hasPassed = true;
-
-  newTeams = newTeams.filter(
-    (team) =>
-      calculateMaxBidPrice(team, players, grades, selectedPlayer) >
-      currentHighestBidPrice
-  );
-
-  setTeams([...newTeams]);
-
-  if (newTeams.length === 0) {
-    if (currentHighestBiddingTeamIndex !== null) {
-      // If there's a highest bidder, they win at their last bid price
-      handleBidSubmit([teams[currentHighestBiddingTeamIndex]], true);
-    } else {
-      // If no one has bid, the player is unsold
-      const updatedPlayer = { ...selectedPlayer, status: "unsold" };
-      const playerDoc = doc(db, "players", selectedPlayer.id);
-      await updateDoc(playerDoc, { status: "unsold" });
-      setPlayers(
-        players.map((player) =>
-          player.id === selectedPlayer.id ? updatedPlayer : player
-        )
-      );
-      setInitialPlayers(
-        initialPlayers.map((player) =>
-          player.id === selectedPlayer.id ? updatedPlayer : player
-        )
-      );
-      setPopupMessage(`${selectedPlayer.name} is unsold.`);
-      setDisableAction(true);
-      setTimeout(() => {
-        setPopupMessage("");
-        setDisableAction(false);
-      }, 3000);
-    }
-    resetBid();
-    return;
-  }
+    const currentTeam = teams[currentBiddingTeamIndex];
+    currentTeam.hasPassed = true;
   
-    if (currentHighestBiddingTeamIndex === null && newTeams.length === 0) {
-      if (selectedPlayer) {
+    newTeams = newTeams.filter(
+      (team) => calculateMaxBidPrice(team, players, grades, selectedPlayer) > currentHighestBidPrice
+    );
+  
+    setTeams([...newTeams]);
+  
+    if (newTeams.length === 0) {
+      if (currentHighestBiddingTeamIndex !== null) {
+        // If there's a highest bidder, they win at their last bid price
+        handleBidSubmit([teams[currentHighestBiddingTeamIndex]], true);
+      } else {
+        // If no one has bid, the player is unsold
         const updatedPlayer = { ...selectedPlayer, status: "unsold" };
         const playerDoc = doc(db, "players", selectedPlayer.id);
         await updateDoc(playerDoc, { status: "unsold" });
@@ -338,30 +310,61 @@ import React, {
     if (newTeams.length === 1 && currentHighestBiddingTeamIndex !== null) {
       handleBidSubmit(newTeams, true);
     } else {
-      let nextTeamIndex = currentBiddingTeamIndex % newTeams.length;
+      // Find the index of the current team in the original teams array
+      const currentTeamIndexInOriginal = teams.findIndex(team => team.id === currentTeam.id);
+      
+      // Start searching from the next team in the original order
+      let nextTeamIndex = (currentTeamIndexInOriginal + 1) % teams.length;
+      let foundEligibleTeam = false;
   
-      // If the next team is not eligible to bid, increment the index until an eligible team is found
-      while (
-        calculateMaxBidPrice(newTeams[nextTeamIndex], players, grades, selectedPlayer) <=
-        currentHighestBidPrice
-      ) {
-        nextTeamIndex = (nextTeamIndex + 1) % newTeams.length;
-        if (nextTeamIndex === currentBiddingTeamIndex) break; // Avoid infinite loop
+      // Iterate through all teams (at most once) to find the next eligible team
+      for (let i = 0; i < teams.length; i++) {
+        const potentialNextTeam = teams[nextTeamIndex];
+        if (newTeams.some(team => team.id === potentialNextTeam.id) &&
+            calculateMaxBidPrice(potentialNextTeam, players, grades, selectedPlayer) > currentHighestBidPrice) {
+          foundEligibleTeam = true;
+          break;
+        }
+        nextTeamIndex = (nextTeamIndex + 1) % teams.length;
       }
   
-      if (nextTeamIndex === currentHighestBiddingTeamIndex) {
-        setCurrentBiddingTeamIndex(nextTeamIndex);
-        handleBidSubmit(newTeams);
-      } else {
-        setCurrentBiddingTeamIndex(nextTeamIndex);
+      if (foundEligibleTeam) {
+        setCurrentBiddingTeamIndex(newTeams.findIndex(team => team.id === teams[nextTeamIndex].id));
         setPopupMessage(
-          `${teams[currentBiddingTeamIndex].teamname} has passed the bid for ${selectedPlayer.name}`
+          `${currentTeam.teamname} has passed the bid for ${selectedPlayer.name}`
         );
         setDisableAction(true);
         setTimeout(() => {
           setPopupMessage("");
           setDisableAction(false);
         }, 3000);
+      } else {
+        // If no eligible team found, end the bidding
+        if (currentHighestBiddingTeamIndex !== null) {
+          handleBidSubmit([teams[currentHighestBiddingTeamIndex]], true);
+        } else {
+          // If no one has bid, the player is unsold
+          const updatedPlayer = { ...selectedPlayer, status: "unsold" };
+          const playerDoc = doc(db, "players", selectedPlayer.id);
+          await updateDoc(playerDoc, { status: "unsold" });
+          setPlayers(
+            players.map((player) =>
+              player.id === selectedPlayer.id ? updatedPlayer : player
+            )
+          );
+          setInitialPlayers(
+            initialPlayers.map((player) =>
+              player.id === selectedPlayer.id ? updatedPlayer : player
+            )
+          );
+          setPopupMessage(`${selectedPlayer.name} is unsold.`);
+          setDisableAction(true);
+          setTimeout(() => {
+            setPopupMessage("");
+            setDisableAction(false);
+          }, 3000);
+          resetBid();
+        }
       }
     }
   };
