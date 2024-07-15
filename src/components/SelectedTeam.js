@@ -272,7 +272,7 @@ import React, {
     currentTeam.hasPassed = true;
   
     newTeams = newTeams.filter(
-      (team) => calculateMaxBidPrice(team, players, grades, selectedPlayer) > currentHighestBidPrice
+      (team) => calculateMaxBidPrice(team, players, grades, selectedPlayer) >= currentHighestBidPrice
     );
   
     setTeams([...newTeams]);
@@ -321,7 +321,7 @@ import React, {
       for (let i = 0; i < teams.length; i++) {
         const potentialNextTeam = teams[nextTeamIndex];
         if (newTeams.some(team => team.id === potentialNextTeam.id) &&
-            calculateMaxBidPrice(potentialNextTeam, players, grades, selectedPlayer) > currentHighestBidPrice) {
+            calculateMaxBidPrice(potentialNextTeam, players, grades, selectedPlayer) >=currentHighestBidPrice) {
           foundEligibleTeam = true;
           break;
         }
