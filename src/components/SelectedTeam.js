@@ -279,7 +279,6 @@ import React, {
   
     if (newTeams.length === 0) {
       if (currentHighestBiddingTeamIndex !== null) {
-        // If there's a highest bidder, they win at their last bid price
         handleBidSubmit([teams[currentHighestBiddingTeamIndex]], true);
       } else {
         // If no one has bid, the player is unsold
@@ -303,7 +302,7 @@ import React, {
           setDisableAction(false);
         }, 3000);
       }
-      resetBid();
+      
       return;
     }
   
@@ -312,16 +311,13 @@ import React, {
     } else {
       // Find the index of the current team in the original teams array
       const currentTeamIndexInOriginal = teams.findIndex(team => team.id === currentTeam.id);
-      
-      // Start searching from the next team in the original order
       let nextTeamIndex = (currentTeamIndexInOriginal + 1) % teams.length;
       let foundEligibleTeam = false;
-  
-      // Iterate through all teams (at most once) to find the next eligible team
+    
       for (let i = 0; i < teams.length; i++) {
         const potentialNextTeam = teams[nextTeamIndex];
         if (newTeams.some(team => team.id === potentialNextTeam.id) &&
-            calculateMaxBidPrice(potentialNextTeam, players, grades, selectedPlayer) >=currentHighestBidPrice) {
+            calculateMaxBidPrice(potentialNextTeam, players, grades, selectedPlayer) >= currentHighestBidPrice) {
           foundEligibleTeam = true;
           break;
         }
@@ -363,7 +359,7 @@ import React, {
             setPopupMessage("");
             setDisableAction(false);
           }, 3000);
-          resetBid();
+          
         }
       }
     }
@@ -605,7 +601,14 @@ import React, {
   };
  
   const gradeOrder = ["A", "B", "C", "D", "E", "F", "G"];
- 
+  const getTeamColorClass = (team, currentHighestBiddingTeamIndex, bidPrice, calculateMaxBidPrice, players, grades, selectedPlayer) => {
+    if (calculateMaxBidPrice(team, players, grades, selectedPlayer) < bidPrice) return "cannot-bid";
+  
+    if (team.playerCount === 7) return "cannot-bid";
+    if (team.hasPassed) return "bidding-over";
+    if (team.id === teams[currentHighestBiddingTeamIndex]?.id) return "current-highest-bidder";
+    return "bidding-eligible";
+  };
   const test = () => {
   return (
   teams[currentBiddingTeamIndex] &&
@@ -704,29 +707,21 @@ import React, {
  
   <div>
   {initialTeams.map((team) => (
-
-
-<span
-key={team.id}
-className={
-  team.playerCount === 7
-    ? "cannot-bid" // red
-    : team.hasPassed
-    ? "bidding-over" // orange
-    : team.id === teams[currentHighestBiddingTeamIndex]?.id
-    ? "current-highest-bidder" // green
-    : calculateMaxBidPrice(team, players, grades, selectedPlayer) < bidPrice
-    ? "cannot-bid" // red
-    : "bidding-eligible"
-//     : calculateMaxBidPrice(team, players, grades, selectedPlayer) > currentHighestBidPrice
-//     ? "bidding-eligible" // yellow
-//     : "cannot-bid" // red
- }
->
-{team.teamname}
-</span>
-
-  ))}
+  <span
+    key={team.id}
+    className={getTeamColorClass(
+      team,
+      currentHighestBiddingTeamIndex,
+      bidPrice,
+      calculateMaxBidPrice,
+      players,
+      grades,
+      selectedPlayer
+    )}
+  >
+    {team.teamname}
+  </span>
+))}
   </div>
   </div>
   <div className="bidding-info-right">
