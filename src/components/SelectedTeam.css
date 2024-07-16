@@ -12,8 +12,54 @@
   background-color: goldenrod; /* or any other color you prefer */
   color: white; /* adjust the text color as needed */
 }
+.grade-section {
+  background-color: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  padding: 10px;
+  min-width: 250px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
 
+.grade-section h3 {
+  margin-top: 0;
+  margin-bottom: 10px; /* Add some spacing between the heading and the player list */
+}
 
+.grade-section ul {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  width: 100%; /* Ensure the player list spans the full width */
+}
+.team-status-circle {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border-radius: 50% !important;
+  margin-right: 10px;
+  flex-shrink: 0;
+}
+
+.team-status-circle.cannot-bid {
+  background-color: red;
+}
+
+.team-status-circle.bidding-over {
+  background-color:orange;
+}
+
+.team-status-circle.current-highest-bidder {
+  background-color: green;
+}
+
+.team-status-circle.bidding-eligible {
+  background-color: yellow;
+}
 .teams-container table td {
   white-space: nowrap;
   /* overflow: hidden; */
@@ -90,7 +136,7 @@ button:disabled:hover {
 .disabled-hover:disabled:hover {
   background-color: inherit;
 }
-.bidding-over {
+/* .bidding-over {
   background-color: orange;
   color: black;
   padding: 5px;
@@ -109,7 +155,7 @@ button:disabled:hover {
   color: black;
   padding: 5px;
   border-radius: 4px;
-}
+} */
 .current-highest-bidder {
   background-color: green;
   color: black;
@@ -244,8 +290,9 @@ button:hover {
   width: 100%;
   padding: 10px;
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr; 
+  grid-template-columns: 1fr 1fr 1fr ; 
   gap: 10px; 
+  height: fit-content;
 }
 
 .team,

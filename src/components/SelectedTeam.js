@@ -14,7 +14,7 @@ import React, {
   writeBatch,
  } from "firebase/firestore";
  import "./SelectedTeam.css";
- import { TotpMultiFactorGenerator } from "firebase/auth/web-extension";
+ 
  
  const SelectedTeam = forwardRef((props, ref) => {
   const [initialTeams, setInitialTeams] = useState([]);
@@ -636,15 +636,7 @@ import React, {
   </>
   )}
   <div>
-  <p
-  style={{
-  visibility: !isBiddingOngoing ? "hidden" : "visible",
-  }}
-  className="current-bidding-team"
-  >
-  Current Bidding Team:{" "}
-  {teams[currentBiddingTeamIndex]?.teamname || ""}
-  </p>
+ 
   </div>
   {bidPrice && (
   <div>
@@ -705,24 +697,7 @@ import React, {
   <div className="bidding-info-left">
   <p className="current-highest-bid">Current Highest Bid Price: {currentHighestBidPrice}</p>
  
-  <div>
-  {initialTeams.map((team) => (
-  <span
-    key={team.id}
-    className={getTeamColorClass(
-      team,
-      currentHighestBiddingTeamIndex,
-      bidPrice,
-      calculateMaxBidPrice,
-      players,
-      grades,
-      selectedPlayer
-    )}
-  >
-    {team.teamname}
-  </span>
-))}
-  </div>
+
   </div>
   <div className="bidding-info-right">
   {popupMessage && (
@@ -755,30 +730,48 @@ import React, {
   </div>
   </div>
   )}
-  <div className="teams">
+<div className="teams">
   {initialTeams.map((team) => (
-  <div className="team" key={team.id}>
-  <h3 style={{ textAlign: "center" }}>{team.teamname}</h3>
-  <div className="budget">
-  <p>
-  Max Bid Price: {calculateMaxBidPrice(team, players, grades, selectedPlayer)}
-  </p>
- 
-  <p>Balance: {team.balance}</p>
-  </div>
-  <table border="1">
-  <thead>
-  <tr>
-  <th>Name</th>
-  <th>Grade</th>
-  <th>Bid Price</th>
-  </tr>
-  </thead>
-  <tbody>{renderPlayers(team.id)}</tbody>
-  </table>
-  </div>
+    <div className="team" key={team.id}>
+     <h3 style={{ 
+  textAlign: "center", 
+  display: "flex", 
+  alignItems: "center", 
+  justifyContent: "center",
+  backgroundColor: team.id === teams[currentBiddingTeamIndex]?.id ? "cyan" : "transparent"
+}}>
+  <span 
+    className={`team-status-circle ${getTeamColorClass(
+      team,
+      currentHighestBiddingTeamIndex,
+      bidPrice,
+      calculateMaxBidPrice,
+      players,
+      grades,
+      selectedPlayer
+    )}`}
+  ></span>
+  <span>{team.teamname}</span>
+</h3>
+      <div className="budget">
+        <p>
+          Max Bid Price: {calculateMaxBidPrice(team, players, grades, selectedPlayer)}
+        </p>
+        <p>Balance: {team.balance}</p>
+      </div>
+      <table border="1">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Grade</th>
+            <th>Bid Price</th>
+          </tr>
+        </thead>
+        <tbody>{renderPlayers(team.id)}</tbody>
+      </table>
+    </div>
   ))}
-  </div>
+</div>
   </div>
  
   {/* Grades Section */}
