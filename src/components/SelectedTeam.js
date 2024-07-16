@@ -14,7 +14,7 @@ import React, {
   writeBatch,
  } from "firebase/firestore";
  import "./SelectedTeam.css";
- import { TotpMultiFactorGenerator } from "firebase/auth/web-extension";
+ 
  
  const SelectedTeam = forwardRef((props, ref) => {
   const [initialTeams, setInitialTeams] = useState([]);
@@ -272,7 +272,7 @@ import React, {
     currentTeam.hasPassed = true;
   
     newTeams = newTeams.filter(
-      (team) => calculateMaxBidPrice(team, players, grades, selectedPlayer) >= currentHighestBidPrice
+      (team) => calculateMaxBidPrice(team, players, grades, selectedPlayer) > currentHighestBidPrice
     );
   
     setTeams([...newTeams]);
@@ -389,6 +389,31 @@ import React, {
 
  
   };
+  const resetBid = async (winningTeamId = null) => {
+    setIsBiddingOngoing(false);
+    const newPlayers = players.filter(
+    (player) => player.id !== selectedPlayer?.id
+    );
+    setPlayers(newPlayers);
+    setTeams(
+    initialTeams.filter(
+    (team) => team.playerCount !== undefined && team.playerCount < 7
+    )
+    );
+   
+    setSelectedPlayer(null);
+    setBidPrice(null);
+    let currentBidTeamLength = initialTeams.filter(
+    (team) => team.playerCount !== undefined && team.playerCount < 7
+    ).length;
+    setBiddingStartTeamIndex(
+    (biddingStartTeamIndex + 1) % currentBidTeamLength
+    );
+    setCurrentBiddingTeamIndex(biddingStartTeamIndex);
+    setCurrentHighestBiddingTeamIndex(null);
+    setCurrentHighestBidPrice(null);
+    await fetchData(); // Ensure data is fetched after reset
+    }; 
   
   const handleBidStart = () => {
     setIsBiddingOngoing(true);
@@ -516,31 +541,7 @@ import React, {
  
  
  
-  const resetBid = async (winningTeamId = null) => {
-  setIsBiddingOngoing(false);
-  const newPlayers = players.filter(
-  (player) => player.id !== selectedPlayer?.id
-  );
-  setPlayers(newPlayers);
-  setTeams(
-  initialTeams.filter(
-  (team) => team.playerCount !== undefined && team.playerCount < 7
-  )
-  );
  
-  setSelectedPlayer(null);
-  setBidPrice(null);
-  let currentBidTeamLength = initialTeams.filter(
-  (team) => team.playerCount !== undefined && team.playerCount < 7
-  ).length;
-  setBiddingStartTeamIndex(
-  (biddingStartTeamIndex + 1) % currentBidTeamLength
-  );
-  setCurrentBiddingTeamIndex(biddingStartTeamIndex);
-  setCurrentHighestBiddingTeamIndex(null);
-  setCurrentHighestBidPrice(null);
-  await fetchData(); // Ensure data is fetched after reset
-  };
  
   const handleDeletePlayer = (player) => {
   setPlayerToDelete(player);
@@ -605,7 +606,14 @@ import React, {
   };
  
   const gradeOrder = ["A", "B", "C", "D", "E", "F", "G"];
- 
+  const getTeamColorClass = (team, currentHighestBiddingTeamIndex, bidPrice, calculateMaxBidPrice, players, grades, selectedPlayer) => {
+    if (calculateMaxBidPrice(team, players, grades, selectedPlayer) < bidPrice) return "cannot-bid";
+  
+    if (team.playerCount === 7) return "cannot-bid";
+    if (team.hasPassed) return "bidding-over";
+    if (team.id === teams[currentHighestBiddingTeamIndex]?.id) return "current-highest-bidder";
+    return "bidding-eligible";
+  };
   const test = () => {
   return (
   teams[currentBiddingTeamIndex] &&
@@ -633,15 +641,7 @@ import React, {
   </>
   )}
   <div>
-  <p
-  style={{
-  visibility: !isBiddingOngoing ? "hidden" : "visible",
-  }}
-  className="current-bidding-team"
-  >
-  Current Bidding Team:{" "}
-  {teams[currentBiddingTeamIndex]?.teamname || ""}
-  </p>
+ 
   </div>
   {bidPrice && (
   <div>
@@ -702,32 +702,7 @@ import React, {
   <div className="bidding-info-left">
   <p className="current-highest-bid">Current Highest Bid Price: {currentHighestBidPrice}</p>
  
-  <div>
-  {initialTeams.map((team) => (
 
-
-<span
-key={team.id}
-className={
-  team.playerCount === 7
-    ? "cannot-bid" // red
-    : team.hasPassed
-    ? "bidding-over" // orange
-    : team.id === teams[currentHighestBiddingTeamIndex]?.id
-    ? "current-highest-bidder" // green
-    : calculateMaxBidPrice(team, players, grades, selectedPlayer) < bidPrice
-    ? "cannot-bid" // red
-    : "bidding-eligible"
-//     : calculateMaxBidPrice(team, players, grades, selectedPlayer) > currentHighestBidPrice
-//     ? "bidding-eligible" // yellow
-//     : "cannot-bid" // red
- }
->
-{team.teamname}
-</span>
-
-  ))}
-  </div>
   </div>
   <div className="bidding-info-right">
   {popupMessage && (
@@ -760,30 +735,48 @@ className={
   </div>
   </div>
   )}
-  <div className="teams">
+<div className="teams">
   {initialTeams.map((team) => (
-  <div className="team" key={team.id}>
-  <h3 style={{ textAlign: "center" }}>{team.teamname}</h3>
-  <div className="budget">
-  <p>
-  Max Bid Price: {calculateMaxBidPrice(team, players, grades, selectedPlayer)}
-  </p>
- 
-  <p>Balance: {team.balance}</p>
-  </div>
-  <table border="1">
-  <thead>
-  <tr>
-  <th>Name</th>
-  <th>Grade</th>
-  <th>Bid Price</th>
-  </tr>
-  </thead>
-  <tbody>{renderPlayers(team.id)}</tbody>
-  </table>
-  </div>
+    <div className="team" key={team.id}>
+     <h3 style={{ 
+  textAlign: "center", 
+  display: "flex", 
+  alignItems: "center", 
+  justifyContent: "center",
+  backgroundColor: team.id === teams[currentBiddingTeamIndex]?.id ? "cyan" : "transparent"
+}}>
+  <span 
+    className={`team-status-circle ${getTeamColorClass(
+      team,
+      currentHighestBiddingTeamIndex,
+      bidPrice,
+      calculateMaxBidPrice,
+      players,
+      grades,
+      selectedPlayer
+    )}`}
+  ></span>
+  <span>{team.teamname}</span>
+</h3>
+      <div className="budget">
+        <p>
+          Max Bid Price: {calculateMaxBidPrice(team, players, grades, selectedPlayer)}
+        </p>
+        <p>Balance: {team.balance}</p>
+      </div>
+      <table border="1">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Grade</th>
+            <th>Bid Price</th>
+          </tr>
+        </thead>
+        <tbody>{renderPlayers(team.id)}</tbody>
+      </table>
+    </div>
   ))}
-  </div>
+</div>
   </div>
  
   {/* Grades Section */}
