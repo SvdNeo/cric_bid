@@ -338,6 +338,9 @@ import React, {
           setPopupMessage("");
           setDisableAction(false);
         }, 3000);
+        if (currentHighestBiddingTeamIndex == newTeams.length) {
+          setCurrentHighestBiddingTeamIndex(currentHighestBiddingTeamIndex - 1);
+        }
       } else {
         // If no eligible team found, end the bidding
         if (currentHighestBiddingTeamIndex !== null) {
