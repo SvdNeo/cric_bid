@@ -600,14 +600,18 @@ import React, {
   
   };
  
-  const gradeOrder = ["A", "B", "C", "D", "E", "F", "G"];
-  const getTeamColorClass = (team, currentHighestBiddingTeamIndex, bidPrice, calculateMaxBidPrice, players, grades, selectedPlayer) => {
+  const gradeOrder = ["A", "B", "C", "D", "E", "F", "G"];  const getTeamColorClass = (team, currentHighestBiddingTeamIndex, bidPrice, calculateMaxBidPrice, players, grades, selectedPlayer) => {
     if (calculateMaxBidPrice(team, players, grades, selectedPlayer) < bidPrice) return "cannot-bid";
-  
-    if (team.playerCount === 7) return "cannot-bid";
+        if (team.playerCount === 7) return "cannot-bid";
     if (team.hasPassed) return "bidding-over";
-    if (team.id === teams[currentHighestBiddingTeamIndex]?.id) return "current-highest-bidder";
-    return "bidding-eligible";
+        if (team.id === teams[currentHighestBiddingTeamIndex]?.id) return "current-highest-bidder";
+        const currentHighestBidder = team.id === teams[currentHighestBiddingTeamIndex]?.id || 
+      (team.id === teams[currentBiddingTeamIndex]?.id && 
+       teams[currentBiddingTeamIndex].hasPassed && 
+       !teams.some((nextTeam) => 
+         calculateMaxBidPrice(nextTeam, players, grades, selectedPlayer) >= currentHighestBidPrice));
+        if (currentHighestBidder) return "current-highest-bidder";
+        return "bidding-eligible";
   };
   const test = () => {
   return (
