@@ -26,7 +26,7 @@ import React, {
   const [bidPrice, setBidPrice] = useState(null);
   const [startingBidPrice, setStartingBidPrice] = useState(0);
   const [currentBiddingTeamIndex, setCurrentBiddingTeamIndex] = useState(0);
-  const [biddingStartTeamIndex, setBiddingStartTeamIndex] = useState(0);
+  // const [biddingStartTeamIndex, setBiddingStartTeamIndex] = useState(0);
   const [error, setError] = useState("");
   const [currentHighestBiddingTeamIndex, setCurrentHighestBiddingTeamIndex] =
   useState(null);
@@ -37,7 +37,11 @@ import React, {
   const [playerToDelete, setPlayerToDelete] = useState(null);
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [disableAction, setDisableAction] = useState(false);
- 
+  const [biddingStartTeamIndex, setBiddingStartTeamIndex] = useState(() => {
+    const storedIndex = localStorage.getItem('biddingStartTeamIndex');
+    return storedIndex !== null ? parseInt(storedIndex, 10) : 0;
+  });
+
   useEffect(() => {
   fetchData();
   }, []);
@@ -395,67 +399,67 @@ import React, {
   const resetBid = async (winningTeamId = null) => {
     setIsBiddingOngoing(false);
     const newPlayers = players.filter(
-    (player) => player.id !== selectedPlayer?.id
+      (player) => player.id !== selectedPlayer?.id
     );
     setPlayers(newPlayers);
     setTeams(
-    initialTeams.filter(
-    (team) => team.playerCount !== undefined && team.playerCount < 7
-    )
+      initialTeams.filter(
+        (team) => team.playerCount !== undefined && team.playerCount < 7
+      )
     );
-   
+     
     setSelectedPlayer(null);
     setBidPrice(null);
     let currentBidTeamLength = initialTeams.filter(
-    (team) => team.playerCount !== undefined && team.playerCount < 7
+      (team) => team.playerCount !== undefined && team.playerCount < 7
     ).length;
-    setBiddingStartTeamIndex(
-    (biddingStartTeamIndex + 1) % currentBidTeamLength
-    );
-    setCurrentBiddingTeamIndex(biddingStartTeamIndex);
+    const newBiddingStartTeamIndex = (biddingStartTeamIndex + 1) % currentBidTeamLength;
+    setBiddingStartTeamIndex(newBiddingStartTeamIndex);
+    localStorage.setItem('biddingStartTeamIndex', newBiddingStartTeamIndex.toString());
+    setCurrentBiddingTeamIndex(newBiddingStartTeamIndex);
     setCurrentHighestBiddingTeamIndex(null);
     setCurrentHighestBidPrice(null);
     await fetchData(); // Ensure data is fetched after reset
-    }; 
-  
-  const handleBidStart = () => {
-    setIsBiddingOngoing(true);
-  
-    if (!selectedPlayer) {
-      const availablePlayers = players.filter((player) => player.status === "new");
-      const unsoldPlayers = players.filter((player) => player.status === "unsold");
-  
-      if (availablePlayers.length === 0 && unsoldPlayers.length === 0) {
-        setError("No players available for bidding.");
-        return;
-      }
-  
-      let player;
-      if (availablePlayers.length === 0 && unsoldPlayers.length > 0) {
-        const randomPlayerIndex = Math.floor(Math.random() * unsoldPlayers.length);
-        player = unsoldPlayers[randomPlayerIndex];
-      } else {
-        const randomPlayerIndex = Math.floor(Math.random() * availablePlayers.length);
-        player = availablePlayers[randomPlayerIndex];
-      }
-  
-      setSelectedPlayer(player);
-      const basePrice = grades[player.grade]?.price || 100;
-      setInitialPrice(basePrice);
-      setBidPrice(basePrice);
-      setCurrentHighestBidPrice(basePrice);
-      setStartingBidPrice(basePrice);
-      setCurrentBiddingTeamIndex(biddingStartTeamIndex);
-  
-      // Reset hasPassed property for all teams
-      const updatedTeams = initialTeams.map((team) => ({
-        ...team,
-        hasPassed: false,
-      }));
-      setInitialTeams(updatedTeams);
-      setTeams(updatedTeams.filter((team) => team.playerCount !== undefined && team.playerCount < 7));
-    }
   };
+  
+    const handleBidStart = () => {
+      setIsBiddingOngoing(true);
+    
+      if (!selectedPlayer) {
+        const availablePlayers = players.filter((player) => player.status === "new");
+        const unsoldPlayers = players.filter((player) => player.status === "unsold");
+    
+        if (availablePlayers.length === 0 && unsoldPlayers.length === 0) {
+          setError("No players available for bidding.");
+          return;
+        }
+    
+        let player;
+        if (availablePlayers.length === 0 && unsoldPlayers.length > 0) {
+          const randomPlayerIndex = Math.floor(Math.random() * unsoldPlayers.length);
+          player = unsoldPlayers[randomPlayerIndex];
+        } else {
+          const randomPlayerIndex = Math.floor(Math.random() * availablePlayers.length);
+          player = availablePlayers[randomPlayerIndex];
+        }
+    
+        setSelectedPlayer(player);
+        const basePrice = grades[player.grade]?.price || 100;
+        setInitialPrice(basePrice);
+        setBidPrice(basePrice);
+        setCurrentHighestBidPrice(basePrice);
+        setStartingBidPrice(basePrice);
+        setCurrentBiddingTeamIndex(biddingStartTeamIndex);
+    
+        // Reset hasPassed property for all teams
+        const updatedTeams = initialTeams.map((team) => ({
+          ...team,
+          hasPassed: false,
+        }));
+        setInitialTeams(updatedTeams);
+        setTeams(updatedTeams.filter((team) => team.playerCount !== undefined && team.playerCount < 7));
+      }
+    };
  
  
  
