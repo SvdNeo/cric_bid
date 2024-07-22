@@ -638,13 +638,14 @@ import React, {
   };
  
   const gradeOrder = ["A", "B", "C", "D", "E", "F", "G"];  
-  const getTeamColorClass = (team, currentHighestBiddingTeamIndex, bidPrice, calculateMaxBidPrice, players, grades, selectedPlayer) => {
+  const getTeamColorClass = (team, currentHighestBiddingTeamIndex, currentHighestBidPrice, calculateMaxBidPrice, players, grades, selectedPlayer) => {
     if (team.id === teams[currentHighestBiddingTeamIndex]?.id) return "current-highest-bidder";
     if (team.playerCount === 7) return "cannot-bid";
     if (team.hasPassed) return "bidding-over";
-    if (calculateMaxBidPrice(team, players, grades, selectedPlayer) < bidPrice) return "cannot-bid";
+    if (calculateMaxBidPrice(team, players, grades, selectedPlayer) < currentHighestBidPrice) return "cannot-bid";
     return "bidding-eligible";
   };
+  
   
   const test = () => {
   return (
@@ -754,7 +755,7 @@ import React, {
   {/* Teams Section */}
   <div className="teams-container">
   <div className="reset">
-  <h2>Teams</h2>
+  
   </div>
   {showDeleteConfirmation && (
   <div className="modal">
@@ -778,16 +779,17 @@ import React, {
   backgroundColor: team.id === teams[currentBiddingTeamIndex]?.id ? "cyan" : "transparent"
 }}>
   <span 
-    className={`team-status-circle ${getTeamColorClass(
-      team,
-      currentHighestBiddingTeamIndex,
-      bidPrice,
-      calculateMaxBidPrice,
-      players,
-      grades,
-      selectedPlayer
-    )}`}
-  ></span>
+  className={`team-status-circle ${getTeamColorClass(
+    team,
+    currentHighestBiddingTeamIndex,
+    currentHighestBidPrice,
+    calculateMaxBidPrice,
+    players,
+    grades,
+    selectedPlayer
+  )}`}
+></span>
+
   <span>{team.teamname}</span>
 </h3>
       <div className="budget">
