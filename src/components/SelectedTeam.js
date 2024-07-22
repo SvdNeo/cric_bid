@@ -446,45 +446,67 @@ import React, {
     await fetchData(); // Ensure data is fetched after reset
   }; 
 
+  const resetUnsoldPlayers = async () => {
+    const batch = writeBatch(db);
+    const playersSnapshot = await getDocs(collection(db, "players"));
+    
+    playersSnapshot.forEach((doc) => {
+      const playerData = doc.data();
+      if (playerData.status === "unsold") {
+        batch.update(doc.ref, { status: "new" });
+      }
+    });
   
-  const handleBidStart = () => {
+    await batch.commit();
+    await fetchData(); // Refresh the data after updating
+  };
+  
+  const handleBidStart = async () => {
     setIsBiddingOngoing(true);
   
     if (!selectedPlayer) {
-      const availablePlayers = players.filter((player) => player.status === "new");
-      const unsoldPlayers = players.filter((player) => player.status === "unsold");
+      let availablePlayers = players.filter((player) => player.status === "new");
+      let unsoldPlayers = players.filter((player) => player.status === "unsold");
   
       if (availablePlayers.length === 0 && unsoldPlayers.length === 0) {
         setError("No players available for bidding.");
+        setIsBiddingOngoing(false);
         return;
       }
   
       let player;
-      if (availablePlayers.length === 0 && unsoldPlayers.length > 0) {
-        const randomPlayerIndex = Math.floor(Math.random() * unsoldPlayers.length);
-        player = unsoldPlayers[randomPlayerIndex];
-      } else {
-        const randomPlayerIndex = Math.floor(Math.random() * availablePlayers.length);
-        player = availablePlayers[randomPlayerIndex];
+      if (availablePlayers.length === 0) {
+        await resetUnsoldPlayers();
+        // After resetting, fetch available players again
+        availablePlayers = players.filter((player) => player.status === "new");
       }
   
-      setSelectedPlayer(player);
-      const basePrice = grades[player.grade]?.price || 100;
-      setInitialPrice(basePrice);
-      setBidPrice(basePrice);
-      setCurrentHighestBidPrice(basePrice);
-      setStartingBidPrice(basePrice);
-      setCurrentBiddingTeamIndex(biddingStartTeamIndex);
+      if (availablePlayers.length > 0) {
+        const randomPlayerIndex = Math.floor(Math.random() * availablePlayers.length);
+        player = availablePlayers[randomPlayerIndex];
   
-      // Reset hasPassed property for all teams
-      const updatedTeams = initialTeams.map((team) => ({
-        ...team,
-        hasPassed: false,
-      }));
-      setInitialTeams(updatedTeams);
-      setTeams(updatedTeams.filter((team) => team.playerCount !== undefined && team.playerCount < 7));
+        setSelectedPlayer(player);
+        const basePrice = grades[player.grade]?.price || 100;
+        setInitialPrice(basePrice);
+        setBidPrice(basePrice);
+        setCurrentHighestBidPrice(basePrice);
+        setStartingBidPrice(basePrice);
+        setCurrentBiddingTeamIndex(biddingStartTeamIndex);
+  
+        // Reset hasPassed property for all teams
+        const updatedTeams = initialTeams.map((team) => ({
+          ...team,
+          hasPassed: false,
+        }));
+        setInitialTeams(updatedTeams);
+        setTeams(updatedTeams.filter((team) => team.playerCount !== undefined && team.playerCount < 7));
+      } else {
+        setError("No players available for bidding after reset.");
+        setIsBiddingOngoing(false);
+      }
     }
   };
+  
  
  
  
@@ -638,13 +660,14 @@ import React, {
   };
  
   const gradeOrder = ["A", "B", "C", "D", "E", "F", "G"];  
-  const getTeamColorClass = (team, currentHighestBiddingTeamIndex, bidPrice, calculateMaxBidPrice, players, grades, selectedPlayer) => {
+  const getTeamColorClass = (team, currentHighestBiddingTeamIndex, currentHighestBidPrice, calculateMaxBidPrice, players, grades, selectedPlayer) => {
     if (team.id === teams[currentHighestBiddingTeamIndex]?.id) return "current-highest-bidder";
     if (team.playerCount === 7) return "cannot-bid";
     if (team.hasPassed) return "bidding-over";
-    if (calculateMaxBidPrice(team, players, grades, selectedPlayer) < bidPrice) return "cannot-bid";
+    if (calculateMaxBidPrice(team, players, grades, selectedPlayer) < currentHighestBidPrice) return "cannot-bid";
     return "bidding-eligible";
   };
+  
   
   const test = () => {
   return (
@@ -754,7 +777,7 @@ import React, {
   {/* Teams Section */}
   <div className="teams-container">
   <div className="reset">
-  <h2>Teams</h2>
+  
   </div>
   {showDeleteConfirmation && (
   <div className="modal">
@@ -778,16 +801,17 @@ import React, {
   backgroundColor: team.id === teams[currentBiddingTeamIndex]?.id ? "cyan" : "transparent"
 }}>
   <span 
-    className={`team-status-circle ${getTeamColorClass(
-      team,
-      currentHighestBiddingTeamIndex,
-      bidPrice,
-      calculateMaxBidPrice,
-      players,
-      grades,
-      selectedPlayer
-    )}`}
-  ></span>
+  className={`team-status-circle ${getTeamColorClass(
+    team,
+    currentHighestBiddingTeamIndex,
+    currentHighestBidPrice,
+    calculateMaxBidPrice,
+    players,
+    grades,
+    selectedPlayer
+  )}`}
+></span>
+
   <span>{team.teamname}</span>
 </h3>
       <div className="budget">
