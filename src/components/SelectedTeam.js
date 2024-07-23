@@ -439,7 +439,7 @@ const SelectedTeam = forwardRef((props, ref) => {
     const basePrice = grades[player.grade]?.price || 100;
     setInitialPrice(basePrice);
     setBidPrice(basePrice);
-    setCurrentHighestBidPrice(basePrice);
+    // setCurrentHighestBidPrice(basePrice);
     setStartingBidPrice(basePrice);
     setCurrentBiddingTeamIndex(biddingStartTeamIndex);
     setIsBiddingOngoing(true);
@@ -540,7 +540,7 @@ const SelectedTeam = forwardRef((props, ref) => {
         const basePrice = grades[player.grade]?.price || 100;
         setInitialPrice(basePrice);
         setBidPrice(basePrice);
-        setCurrentHighestBidPrice(basePrice);
+        // setCurrentHighestBidPrice(basePrice);
         setStartingBidPrice(basePrice);
         setCurrentBiddingTeamIndex(biddingStartTeamIndex);
 
@@ -741,7 +741,7 @@ const SelectedTeam = forwardRef((props, ref) => {
     if (team.playerCount === 7) return "cannot-bid";
     if (team.hasPassed) return "bidding-over";
     if (
-      calculateMaxBidPrice(team, players, grades, selectedPlayer) <
+      calculateMaxBidPrice(team, players, grades, selectedPlayer) <=
       currentHighestBidPrice
     )
       return "cannot-bid";
