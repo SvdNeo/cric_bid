@@ -328,7 +328,7 @@ const SelectedTeam = forwardRef((props, ref) => {
 
     newTeams = newTeams.filter(
       (team) =>
-        calculateMaxBidPrice(team, players, grades, selectedPlayer) >=
+        calculateMaxBidPrice(team, players, grades, selectedPlayer) >
         currentHighestBidPrice
     );
 
@@ -364,8 +364,26 @@ const SelectedTeam = forwardRef((props, ref) => {
     }
 
     if (newTeams.length === 1 && currentHighestBiddingTeamIndex !== null) {
-      handleBidSubmit(newTeams, true);
-    } else {
+      // Check if any other team can still bid
+      const canAnyOtherTeamBid = teams.some((team, index) => 
+        index !== currentHighestBiddingTeamIndex && 
+        !team.hasPassed && 
+        calculateMaxBidPrice(team, players, grades, selectedPlayer) > currentHighestBidPrice
+      );
+    
+      if (!canAnyOtherTeamBid) {
+        handleBidSubmit(newTeams, true);
+      } else {
+        // Continue the bidding process
+        setDisableAction(false)
+        let nextTeamIndex = (currentBiddingTeamIndex + 1) % teams.length;
+        while (teams[nextTeamIndex].hasPassed || calculateMaxBidPrice(teams[nextTeamIndex], players, grades, selectedPlayer) <= currentHighestBidPrice) {
+          nextTeamIndex = (nextTeamIndex + 1) % teams.length;
+        }
+        setCurrentBiddingTeamIndex(nextTeamIndex);
+      }
+    }
+     else {
       let curBidPrice = currentHighestBiddingTeamIndex !== null ?  currentHighestBidPrice + 100 : initialPrice ;
       setBidPrice(curBidPrice);
       const currentTeamIndexInOriginal = teams.findIndex(
