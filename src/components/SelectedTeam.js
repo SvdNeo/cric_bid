@@ -190,7 +190,8 @@ const SelectedTeam = forwardRef((props, ref) => {
       ));
   };
 
-  const handleBidSubmit = async (tempTeams, isPassed) => {
+  const handleBidSubmit =  (tempTeams, isPassed) => {
+    setDisableAction(true);
     const currentTeam = tempTeams[currentBiddingTeamIndex];
 
     if (
@@ -240,7 +241,7 @@ const SelectedTeam = forwardRef((props, ref) => {
         };
 
         const playerDoc = doc(db, "players", selectedPlayer.id);
-        await updateDoc(playerDoc, updatedPlayer);
+         updateDoc(playerDoc, updatedPlayer);
 
         const updatedTeam = {
           ...winningTeam,
@@ -265,16 +266,16 @@ const SelectedTeam = forwardRef((props, ref) => {
         );
 
         const teamDoc = doc(db, "teams", winningTeam.id);
-        await updateDoc(teamDoc, updatedTeam);
+         updateDoc(teamDoc, updatedTeam);
 
         setPopupMessage(
           `${winningTeam.teamname} has won the bid for ${selectedPlayer.name} for an Auction Price of ${currentBidPrice}`
         );
 
-        setDisableAction(true);
+        setDisableAction(false);
         setTimeout(() => {
           setPopupMessage("");
-          setDisableAction(false);
+          
         }, 3000);
         fetchData();
         resetBid();
@@ -285,10 +286,10 @@ const SelectedTeam = forwardRef((props, ref) => {
         );
 
         // Clear popup message after 3 seconds
-        setDisableAction(true);
+        setDisableAction(false);
         setTimeout(() => {
           setPopupMessage("");
-          setDisableAction(false);
+    
         }, 3000);
         let nextBidPrice = bidPrice + 100;
         setBidPrice(nextBidPrice); // Set the next bid price
@@ -317,7 +318,8 @@ const SelectedTeam = forwardRef((props, ref) => {
     }
   };
 
-  const handleBidPass = async () => {
+  const handleBidPass = () => {
+    setDisableAction(true);
     let newTeams = teams.filter(
       (_, index) => index !== currentBiddingTeamIndex
     );
@@ -339,7 +341,7 @@ const SelectedTeam = forwardRef((props, ref) => {
         // Handle the case when no one has bid
         const updatedPlayer = { ...selectedPlayer, status: "unsold" };
         const playerDoc = doc(db, "players", selectedPlayer.id);
-        await updateDoc(playerDoc, { status: "unsold" });
+         updateDoc(playerDoc, { status: "unsold" });
         setPlayers(
           players.map((player) =>
             player.id === selectedPlayer.id ? updatedPlayer : player
@@ -351,10 +353,10 @@ const SelectedTeam = forwardRef((props, ref) => {
           )
         );
         setPopupMessage(`${selectedPlayer.name} is unsold.`);
-        setDisableAction(true);
+        setDisableAction(false);
         setTimeout(() => {
           setPopupMessage("");
-          setDisableAction(false);
+         
         }, 3000);
       }
       resetBid();
@@ -364,7 +366,7 @@ const SelectedTeam = forwardRef((props, ref) => {
     if (newTeams.length === 1 && currentHighestBiddingTeamIndex !== null) {
       handleBidSubmit(newTeams, true);
     } else {
-      let curBidPrice = currentHighestBiddingTeamIndex !== null ? currentHighestBidPrice + 100 : currentHighestBidPrice;
+      let curBidPrice = currentHighestBiddingTeamIndex !== null ?  currentHighestBidPrice + 100 : initialPrice ;
       setBidPrice(curBidPrice);
       const currentTeamIndexInOriginal = teams.findIndex(
         (team) => team.id === currentTeam.id
@@ -396,10 +398,11 @@ const SelectedTeam = forwardRef((props, ref) => {
         setPopupMessage(
           `${currentTeam.teamname} has passed the bid for ${selectedPlayer.name}`
         );
-        setDisableAction(true);
+        setDisableAction(false);
+        
         setTimeout(() => {
           setPopupMessage("");
-          setDisableAction(false);
+          
         }, 3000);
         if (currentHighestBiddingTeamIndex == newTeams.length) {
           setCurrentHighestBiddingTeamIndex(currentHighestBiddingTeamIndex - 1);
@@ -412,7 +415,7 @@ const SelectedTeam = forwardRef((props, ref) => {
           // If no one has bid, the player is unsold
           const updatedPlayer = { ...selectedPlayer, status: "unsold" };
           const playerDoc = doc(db, "players", selectedPlayer.id);
-          await updateDoc(playerDoc, { status: "unsold" });
+           updateDoc(playerDoc, { status: "unsold" });
           setPlayers(
             players.map((player) =>
               player.id === selectedPlayer.id ? updatedPlayer : player
@@ -424,10 +427,10 @@ const SelectedTeam = forwardRef((props, ref) => {
             )
           );
           setPopupMessage(`${selectedPlayer.name} is unsold.`);
-          setDisableAction(true);
+          setDisableAction(false);
           setTimeout(() => {
             setPopupMessage("");
-            setDisableAction(false);
+           
           }, 3000);
           resetBid();
         }
@@ -556,7 +559,7 @@ const SelectedTeam = forwardRef((props, ref) => {
           )
         );
       } else {
-        setError("No players available for bidding after reset.");
+        // setError("No players available for bidding after reset.");
         setIsBiddingOngoing(false);
       }
     }
