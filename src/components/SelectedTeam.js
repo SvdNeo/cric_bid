@@ -23,6 +23,7 @@ const SelectedTeam = forwardRef((props, ref) => {
   const [players, setPlayers] = useState([]);
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [bidPrice, setBidPrice] = useState(null);
+  const [tempBidPrice, setTempBidPrice] = useState(null);
   const [startingBidPrice, setStartingBidPrice] = useState(0);
   const [currentBiddingTeamIndex, setCurrentBiddingTeamIndex] = useState(0);
   const [biddingStartTeamIndex, setBiddingStartTeamIndex] = useState(0);
@@ -191,6 +192,8 @@ const SelectedTeam = forwardRef((props, ref) => {
   };
 
   const handleBidSubmit =  (tempTeams, isPassed) => {
+ 
+    setBidPrice(tempBidPrice);
     setDisableAction(true);
     const currentTeam = tempTeams[currentBiddingTeamIndex];
 
@@ -208,14 +211,14 @@ const SelectedTeam = forwardRef((props, ref) => {
       return;
     }
 
-    if (selectedPlayer && bidPrice) {
+    if (selectedPlayer && tempBidPrice) {
       setCurrentHighestBiddingTeamIndex(currentBiddingTeamIndex);
       let remainingTeams = tempTeams;
       if (!isPassed) {
         remainingTeams = tempTeams.filter(
           (team) =>
             calculateMaxBidPrice(team, players, grades, selectedPlayer) >=
-            bidPrice
+          tempBidPrice
         );
       }
 
@@ -230,8 +233,8 @@ const SelectedTeam = forwardRef((props, ref) => {
         }
 
         const currentBidPrice = isPassed
-          ? currentHighestBidPrice || bidPrice
-          : bidPrice;
+          ? currentHighestBidPrice || tempBidPrice
+          : tempBidPrice;
         const updatedPlayer = {
           ...selectedPlayer,
           bidPrice: currentBidPrice,
@@ -280,9 +283,9 @@ const SelectedTeam = forwardRef((props, ref) => {
         fetchData();
         resetBid();
       } else {
-        setCurrentHighestBidPrice(bidPrice);
+        setCurrentHighestBidPrice(tempBidPrice);
         setPopupMessage(
-          `${currentTeam.teamname} has bid ${selectedPlayer.name} for an Auction Price of ${bidPrice}`
+          `${currentTeam.teamname} has bid ${selectedPlayer.name} for an Auction Price of ${tempBidPrice}`
         );
 
         // Clear popup message after 3 seconds
@@ -291,8 +294,9 @@ const SelectedTeam = forwardRef((props, ref) => {
           setPopupMessage("");
     
         }, 3000);
-        let nextBidPrice = bidPrice + 100;
+        let nextBidPrice = tempBidPrice + 100;
         setBidPrice(nextBidPrice); // Set the next bid price
+        setTempBidPrice(nextBidPrice)
         setStartingBidPrice(nextBidPrice);
         let nextTeamIndex = (currentBiddingTeamIndex + 1) % tempTeams.length;
         while (
@@ -386,6 +390,7 @@ const SelectedTeam = forwardRef((props, ref) => {
      else {
       let curBidPrice = currentHighestBiddingTeamIndex !== null ?  currentHighestBidPrice + 100 : initialPrice ;
       setBidPrice(curBidPrice);
+      setTempBidPrice(curBidPrice)
       const currentTeamIndexInOriginal = teams.findIndex(
         (team) => team.id === currentTeam.id
       );
@@ -460,6 +465,7 @@ const SelectedTeam = forwardRef((props, ref) => {
     const basePrice = grades[player.grade]?.price || 100;
     setInitialPrice(basePrice);
     setBidPrice(basePrice);
+    setTempBidPrice(basePrice); 
     // setCurrentHighestBidPrice(basePrice);
     setStartingBidPrice(basePrice);
     setCurrentBiddingTeamIndex(biddingStartTeamIndex);
@@ -491,6 +497,7 @@ const SelectedTeam = forwardRef((props, ref) => {
 
     setSelectedPlayer(null);
     setBidPrice(null);
+    setTempBidPrice(null);
     let currentBidTeamLength = initialTeams.filter(
       (team) => team.playerCount !== undefined && team.playerCount < 7
     ).length;
@@ -561,6 +568,7 @@ const SelectedTeam = forwardRef((props, ref) => {
         const basePrice = grades[player.grade]?.price || 100;
         setInitialPrice(basePrice);
         setBidPrice(basePrice);
+        setTempBidPrice(basePrice);
         // setCurrentHighestBidPrice(basePrice);
         setStartingBidPrice(basePrice);
         setCurrentBiddingTeamIndex(biddingStartTeamIndex);
@@ -804,8 +812,8 @@ const SelectedTeam = forwardRef((props, ref) => {
                   <div>
                     <label>Bid Price: </label>
                     <select
-                      value={bidPrice}
-                      onChange={(e) => setBidPrice(Number(e.target.value))}
+                     value={tempBidPrice}
+                     onChange={(e) => setTempBidPrice(Number(e.target.value))}
                       style={{ width: "75px" }}
                     >
                       {(() => {
