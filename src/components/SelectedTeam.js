@@ -336,6 +336,14 @@ const SelectedTeam = forwardRef((props, ref) => {
     );
 
     setTeams([...newTeams]);
+    if (!newTeams[currentHighestBiddingTeamIndex] || currentHighestBiddingTeam && newTeams[currentHighestBiddingTeamIndex].id != currentHighestBiddingTeam.id) {
+      for (let i = 0; i < newTeams.length; i++) {
+        if (currentHighestBiddingTeam.id == newTeams[i].id) {
+          setCurrentHighestBiddingTeamIndex(i);
+        }
+      }
+    }
+
 
     if (newTeams.length === 0) {
       if (currentHighestBiddingTeamIndex !== null) {
@@ -441,7 +449,7 @@ const SelectedTeam = forwardRef((props, ref) => {
         }, 3000);
         if (currentHighestBiddingTeamIndex == newTeams.length) {
           setCurrentHighestBiddingTeamIndex(currentHighestBiddingTeamIndex - 1);
-          setCurrentHighestBiddingTeam(newTeams[currentBiddingTeamIndex - 1]);
+          setCurrentHighestBiddingTeam(newTeams[currentHighestBiddingTeamIndex - 1]);
         }
       } else {
         // If no eligible team found, end the bidding
