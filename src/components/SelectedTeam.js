@@ -37,7 +37,8 @@ const SelectedTeam = forwardRef((props, ref) => {
   const [playerToDelete, setPlayerToDelete] = useState(null);
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [disableAction, setDisableAction] = useState(false);
-
+  const [currentHighestBiddingTeam, setCurrentHighestBiddingTeam] =
+    useState(null);
   useEffect(() => {
     fetchData();
     loadBiddingStartTeamIndex();
@@ -191,8 +192,7 @@ const SelectedTeam = forwardRef((props, ref) => {
       ));
   };
 
-  const handleBidSubmit =  (tempTeams, isPassed) => {
- 
+  const handleBidSubmit = (tempTeams, isPassed) => {
     setBidPrice(tempBidPrice);
     setDisableAction(true);
     const currentTeam = tempTeams[currentBiddingTeamIndex];
@@ -213,12 +213,13 @@ const SelectedTeam = forwardRef((props, ref) => {
 
     if (selectedPlayer && tempBidPrice) {
       setCurrentHighestBiddingTeamIndex(currentBiddingTeamIndex);
+      setCurrentHighestBiddingTeam(tempTeams[currentBiddingTeamIndex]);
       let remainingTeams = tempTeams;
       if (!isPassed) {
         remainingTeams = tempTeams.filter(
           (team) =>
             calculateMaxBidPrice(team, players, grades, selectedPlayer) >=
-          tempBidPrice
+            tempBidPrice
         );
       }
 
@@ -244,7 +245,7 @@ const SelectedTeam = forwardRef((props, ref) => {
         };
 
         const playerDoc = doc(db, "players", selectedPlayer.id);
-         updateDoc(playerDoc, updatedPlayer);
+        updateDoc(playerDoc, updatedPlayer);
 
         const updatedTeam = {
           ...winningTeam,
@@ -269,7 +270,7 @@ const SelectedTeam = forwardRef((props, ref) => {
         );
 
         const teamDoc = doc(db, "teams", winningTeam.id);
-         updateDoc(teamDoc, updatedTeam);
+        updateDoc(teamDoc, updatedTeam);
 
         setPopupMessage(
           `${winningTeam.teamname} has won the bid for ${selectedPlayer.name} for an Auction Price of ${currentBidPrice}`
@@ -278,7 +279,6 @@ const SelectedTeam = forwardRef((props, ref) => {
         setDisableAction(false);
         setTimeout(() => {
           setPopupMessage("");
-          
         }, 3000);
         fetchData();
         resetBid();
@@ -292,11 +292,10 @@ const SelectedTeam = forwardRef((props, ref) => {
         setDisableAction(false);
         setTimeout(() => {
           setPopupMessage("");
-    
         }, 3000);
         let nextBidPrice = tempBidPrice + 100;
         setBidPrice(nextBidPrice); // Set the next bid price
-        setTempBidPrice(nextBidPrice)
+        setTempBidPrice(nextBidPrice);
         setStartingBidPrice(nextBidPrice);
         let nextTeamIndex = (currentBiddingTeamIndex + 1) % tempTeams.length;
         while (
@@ -340,12 +339,15 @@ const SelectedTeam = forwardRef((props, ref) => {
 
     if (newTeams.length === 0) {
       if (currentHighestBiddingTeamIndex !== null) {
-        handleBidSubmit([teams[currentHighestBiddingTeamIndex]], true);
+        let winningTeam = !teams[currentHighestBiddingTeamIndex]
+          ? currentHighestBiddingTeam
+          : teams[currentHighestBiddingTeamIndex];
+        handleBidSubmit([winningTeam], true);
       } else {
         // Handle the case when no one has bid
         const updatedPlayer = { ...selectedPlayer, status: "unsold" };
         const playerDoc = doc(db, "players", selectedPlayer.id);
-         updateDoc(playerDoc, { status: "unsold" });
+        updateDoc(playerDoc, { status: "unsold" });
         setPlayers(
           players.map((player) =>
             player.id === selectedPlayer.id ? updatedPlayer : player
@@ -360,7 +362,6 @@ const SelectedTeam = forwardRef((props, ref) => {
         setDisableAction(false);
         setTimeout(() => {
           setPopupMessage("");
-         
         }, 3000);
       }
       resetBid();
@@ -369,28 +370,40 @@ const SelectedTeam = forwardRef((props, ref) => {
 
     if (newTeams.length === 1 && currentHighestBiddingTeamIndex !== null) {
       // Check if any other team can still bid
-      const canAnyOtherTeamBid = teams.some((team, index) => 
-        index !== currentHighestBiddingTeamIndex && 
-        !team.hasPassed && 
-        calculateMaxBidPrice(team, players, grades, selectedPlayer) > currentHighestBidPrice
+      const canAnyOtherTeamBid = teams.some(
+        (team, index) =>
+          index !== currentHighestBiddingTeamIndex &&
+          !team.hasPassed &&
+          calculateMaxBidPrice(team, players, grades, selectedPlayer) >
+            currentHighestBidPrice
       );
-    
+
       if (!canAnyOtherTeamBid) {
         handleBidSubmit(newTeams, true);
       } else {
         // Continue the bidding process
-        setDisableAction(false)
+        setDisableAction(false);
         let nextTeamIndex = (currentBiddingTeamIndex + 1) % teams.length;
-        while (teams[nextTeamIndex].hasPassed || calculateMaxBidPrice(teams[nextTeamIndex], players, grades, selectedPlayer) <= currentHighestBidPrice) {
+        while (
+          teams[nextTeamIndex].hasPassed ||
+          calculateMaxBidPrice(
+            teams[nextTeamIndex],
+            players,
+            grades,
+            selectedPlayer
+          ) <= currentHighestBidPrice
+        ) {
           nextTeamIndex = (nextTeamIndex + 1) % teams.length;
         }
         setCurrentBiddingTeamIndex(nextTeamIndex);
       }
-    }
-     else {
-      let curBidPrice = currentHighestBiddingTeamIndex !== null ?  currentHighestBidPrice + 100 : initialPrice ;
+    } else {
+      let curBidPrice =
+        currentHighestBiddingTeamIndex !== null
+          ? currentHighestBidPrice + 100
+          : initialPrice;
       setBidPrice(curBidPrice);
-      setTempBidPrice(curBidPrice)
+      setTempBidPrice(curBidPrice);
       const currentTeamIndexInOriginal = teams.findIndex(
         (team) => team.id === currentTeam.id
       );
@@ -422,13 +435,13 @@ const SelectedTeam = forwardRef((props, ref) => {
           `${currentTeam.teamname} has passed the bid for ${selectedPlayer.name}`
         );
         setDisableAction(false);
-        
+
         setTimeout(() => {
           setPopupMessage("");
-          
         }, 3000);
         if (currentHighestBiddingTeamIndex == newTeams.length) {
           setCurrentHighestBiddingTeamIndex(currentHighestBiddingTeamIndex - 1);
+          setCurrentHighestBiddingTeam(newTeams[currentBiddingTeamIndex - 1]);
         }
       } else {
         // If no eligible team found, end the bidding
@@ -438,7 +451,7 @@ const SelectedTeam = forwardRef((props, ref) => {
           // If no one has bid, the player is unsold
           const updatedPlayer = { ...selectedPlayer, status: "unsold" };
           const playerDoc = doc(db, "players", selectedPlayer.id);
-           updateDoc(playerDoc, { status: "unsold" });
+          updateDoc(playerDoc, { status: "unsold" });
           setPlayers(
             players.map((player) =>
               player.id === selectedPlayer.id ? updatedPlayer : player
@@ -453,7 +466,6 @@ const SelectedTeam = forwardRef((props, ref) => {
           setDisableAction(false);
           setTimeout(() => {
             setPopupMessage("");
-           
           }, 3000);
           resetBid();
         }
@@ -465,7 +477,7 @@ const SelectedTeam = forwardRef((props, ref) => {
     const basePrice = grades[player.grade]?.price || 100;
     setInitialPrice(basePrice);
     setBidPrice(basePrice);
-    setTempBidPrice(basePrice); 
+    setTempBidPrice(basePrice);
     // setCurrentHighestBidPrice(basePrice);
     setStartingBidPrice(basePrice);
     setCurrentBiddingTeamIndex(biddingStartTeamIndex);
@@ -515,6 +527,7 @@ const SelectedTeam = forwardRef((props, ref) => {
     );
 
     setCurrentHighestBiddingTeamIndex(null);
+    setCurrentHighestBiddingTeam(null);
     setCurrentHighestBidPrice(null);
     await fetchData(); // Ensure data is fetched after reset
   };
@@ -812,8 +825,8 @@ const SelectedTeam = forwardRef((props, ref) => {
                   <div>
                     <label>Bid Price: </label>
                     <select
-                     value={tempBidPrice}
-                     onChange={(e) => setTempBidPrice(Number(e.target.value))}
+                      value={tempBidPrice}
+                      onChange={(e) => setTempBidPrice(Number(e.target.value))}
                       style={{ width: "75px" }}
                     >
                       {(() => {
