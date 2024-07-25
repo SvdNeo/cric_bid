@@ -336,7 +336,7 @@ const SelectedTeam = forwardRef((props, ref) => {
     );
 
     setTeams([...newTeams]);
-    if (!newTeams[currentHighestBiddingTeamIndex] || currentHighestBiddingTeam && newTeams[currentHighestBiddingTeamIndex].id != currentHighestBiddingTeam.id) {
+    if (currentHighestBiddingTeam && (!newTeams[currentHighestBiddingTeamIndex] || newTeams[currentHighestBiddingTeamIndex].id != currentHighestBiddingTeam.id)) {
       for (let i = 0; i < newTeams.length; i++) {
         if (currentHighestBiddingTeam.id == newTeams[i].id) {
           setCurrentHighestBiddingTeamIndex(i);
