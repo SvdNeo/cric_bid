@@ -1,52 +1,67 @@
-import React, { useState, useEffect } from 'react';
-import { db } from './firebase/firebase_config'; 
+import React, { useState, useEffect, useImperativeHandle, forwardRef } from 'react';
+import { db } from './firebase/firebase_config';
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 import './PlayerManager.css';
 
-const PlayerManager = () => {
+const PlayerManager = (props, ref) => {
   const [playerName, setPlayerName] = useState('');
   const [grade, setGrade] = useState('');
+  const [teamName, setTeamName] = useState('');
+  const [isDefaultOwner, setIsDefaultOwner] = useState(false);
   const [grades, setGrades] = useState([]);
+  const [teams, setTeams] = useState([]);
   const [players, setPlayers] = useState([]);
   const [editingPlayer, setEditingPlayer] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [playerToDelete, setPlayerToDelete] = useState(null);
 
+  // Define fetch functions outside useEffect so they can be used elsewhere
+  const fetchGrades = async () => {
+    try {
+      const gradeCollection = await getDocs(collection(db, 'grade'));
+      setGrades(gradeCollection.docs.map(doc => doc.data().name));
+    } catch (error) {
+      console.error("Error fetching grades: ", error);
+    }
+  };
+
+  const fetchTeams = async () => {
+    try {
+      const teamCollection = await getDocs(collection(db, 'teams'));
+      setTeams(teamCollection.docs.map(doc => doc.data().teamname));
+    } catch (error) {
+      console.error("Error fetching teams: ", error);
+    }
+  };
+
+  const fetchPlayers = async () => {
+    try {
+      const playerCollection = await getDocs(collection(db, 'players'));
+      setPlayers(playerCollection.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    } catch (error) {
+      console.error("Error fetching players: ", error);
+    }
+  };
+
   useEffect(() => {
-    // Fetch grades from Firestore
-    const fetchGrades = async () => {
-      try {
-        const gradeCollection = await getDocs(collection(db, 'grade'));
-        setGrades(gradeCollection.docs.map(doc => doc.data().name));
-      } catch (error) {
-        console.error("Error fetching grades: ", error);
-      }
-    };
-
-    // Fetch players from Firestore
-    const fetchPlayers = async () => {
-      try {
-        const playerCollection = await getDocs(collection(db, 'players'));
-        setPlayers(playerCollection.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-      } catch (error) {
-        console.error("Error fetching players: ", error);
-      }
-    };
-
     fetchGrades();
-    fetchPlayers();
+    fetchTeams();
+    fetchPlayers(); // Call fetchPlayers here
   }, []);
 
   const handleAddPlayer = async () => {
-    if (playerName && grade) {
-      const newPlayer = { name: playerName, grade };
+    if (playerName && grade && (isDefaultOwner ? teamName : true)) {
+      if (isDefaultOwner && players.some(player => player.teamName === teamName && player.defaultOwner)) {
+        setErrorMessage(`Team ${teamName} already has a default owner.`);
+        return;
+      }
+
+      const newPlayer = { name: playerName, grade, teamName: isDefaultOwner ? teamName : '', defaultOwner: isDefaultOwner };
       try {
         const playerRef = await addDoc(collection(db, 'players'), newPlayer);
         setPlayers([...players, { id: playerRef.id, ...newPlayer }]);
-        setPlayerName('');
-        setGrade('');
-        setErrorMessage('');
+        resetForm();
       } catch (error) {
         console.error("Error adding player: ", error);
       }
@@ -59,20 +74,25 @@ const PlayerManager = () => {
     const player = players.find(p => p.id === id);
     setPlayerName(player.name);
     setGrade(player.grade);
+    setTeamName(player.teamName);
+    setIsDefaultOwner(player.defaultOwner);
     setEditingPlayer(player);
     setErrorMessage('');
   };
 
   const handleUpdatePlayer = async () => {
-    if (playerName && grade) {
+    if (playerName && grade && (isDefaultOwner ? teamName : true)) {
+      if (isDefaultOwner && players.some(player => player.teamName === teamName && player.defaultOwner && player.id !== editingPlayer.id)) {
+        setErrorMessage(`Team ${teamName} already has a default owner.`);
+        return;
+      }
+
+      const updatedPlayer = { name: playerName, grade, teamName: isDefaultOwner ? teamName : '', defaultOwner: isDefaultOwner };
       const playerDoc = doc(db, 'players', editingPlayer.id);
       try {
-        await updateDoc(playerDoc, { name: playerName, grade: grade });
-        setPlayers(players.map(player => (player.id === editingPlayer.id ? { ...player, name: playerName, grade: grade } : player)));
-        setPlayerName('');
-        setGrade('');
-        setEditingPlayer(null);
-        setErrorMessage('');
+        await updateDoc(playerDoc, updatedPlayer);
+        setPlayers(players.map(player => (player.id === editingPlayer.id ? { ...player, ...updatedPlayer } : player)));
+        resetForm();
       } catch (error) {
         console.error("Error updating player: ", error);
       }
@@ -81,11 +101,17 @@ const PlayerManager = () => {
     }
   };
 
-  const handleCancelEdit = () => {
+  const resetForm = () => {
     setPlayerName('');
     setGrade('');
+    setTeamName('');
+    setIsDefaultOwner(false);
     setEditingPlayer(null);
     setErrorMessage('');
+  };
+
+  const handleCancelEdit = () => {
+    resetForm();
   };
 
   const handleDeletePlayer = async (id) => {
@@ -110,6 +136,18 @@ const PlayerManager = () => {
     setPlayerToDelete(null);
   };
 
+  const handleResetPlayers = async () => {
+    try {
+      await fetchPlayers(); // Fetch the latest data from the database
+    } catch (error) {
+      console.error("Error resetting players: ", error);
+    }
+  };
+
+  useImperativeHandle(ref, () => ({
+    handleResetPlayers,
+  }));
+
   // Sort players by grade before rendering
   const sortedPlayers = [...players].sort((a, b) => a.grade.localeCompare(b.grade));
 
@@ -129,6 +167,26 @@ const PlayerManager = () => {
             <option key={index} value={grade}>{grade}</option>
           ))}
         </select>
+        <div>
+          <label>
+            <input
+              type="checkbox"
+              checked={isDefaultOwner}
+              onChange={(e) => setIsDefaultOwner(e.target.checked)}
+            />
+            Default Owner
+          </label>
+          {isDefaultOwner && (
+            <>
+              <select value={teamName} onChange={(e) => setTeamName(e.target.value)}>
+                <option value="">Select Team</option>
+                {teams.map((team, index) => (
+                  <option key={index} value={team}>{team}</option>
+                ))}
+              </select>
+            </>
+          )}
+        </div>
         {editingPlayer ? (
           <div className="buttons">
             <button className="update-button" onClick={handleUpdatePlayer}>Update Player</button>
@@ -144,7 +202,7 @@ const PlayerManager = () => {
         <ul>
           {sortedPlayers.map(player => (
             <li key={player.id}>
-              {player.name} - {player.grade}
+              {player.name} - {player.grade} - {player.teamName} - {player.defaultOwner ? 'Default Owner' : ''}
               <div className="player-buttons">
                 <button className="edit-button" onClick={() => handleEditPlayer(player.id)}>Edit</button>
                 <button className="delete-button" onClick={() => confirmDeletePlayer(player.id)}>Delete</button>
@@ -168,4 +226,4 @@ const PlayerManager = () => {
   );
 };
 
-export default PlayerManager;
+export default forwardRef(PlayerManager);

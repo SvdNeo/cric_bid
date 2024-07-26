@@ -1,9 +1,11 @@
+// App.js
 import React, { useRef, useState, useEffect } from 'react';
 import { BrowserRouter as Router, Route, Link, Routes } from 'react-router-dom';
 import './App.css';
 import PlayerManager from './components/PlayerManager';
 import SelectedTeam from './components/SelectedTeam';
 import Login from './components/Login';
+import TeamManagement from './components/TeamManagement';
 import { useAuthState } from "react-firebase-hooks/auth";
 import { useNavigate } from "react-router-dom";
 import { logout } from "./components/firebase/auth";
@@ -15,29 +17,11 @@ const Header = ({ onResetTeams }) => {
   const [name, setName] = useState("");
   const navigate = useNavigate();
 
-  // const fetchUserName = async () => {
-  //   if (!user) return;
-  //   try {
-  //     const q = query(collection(db, "users"), where("uid", "==", user.uid));
-  //     const querySnapshot = await getDocs(q);
-  //     if (!querySnapshot.empty) {
-  //       const userDoc = querySnapshot.docs[0];
-  //       setName(userDoc.data().name);
-  //     } else {
-  //       console.error("No matching documents found.");
-  //       alert("No matching user data found.");
-  //     }
-  //   } catch (err) {
-  //     console.error("Error fetching user data:", err);
-  //     alert("An error occurred while fetching user data.");
-  //   }
-  // };
-
   useEffect(() => {
     if (loading) return;
     if (!user) {
       navigate("/");
-    } 
+    }
   }, [user, loading, navigate]);
 
   return (
@@ -52,6 +36,9 @@ const Header = ({ onResetTeams }) => {
               </li>
               <li>
                 <Link to="/selected-team">Selected Team</Link>
+              </li>
+              <li>
+                <Link to="/team-management">Team Management</Link>
               </li>
               <li>
                 <button className='btn-reset' onClick={onResetTeams}>Reset</button>
@@ -69,10 +56,14 @@ const Header = ({ onResetTeams }) => {
 
 const App = () => {
   const teamRef = useRef();
+  const playerManagerRef = useRef();
 
   const handleResetTeams = () => {
     if (teamRef.current) {
       teamRef.current.resetTeams();
+    }
+    if (playerManagerRef.current) {
+      playerManagerRef.current.handleResetPlayers();
     }
   };
 
@@ -82,8 +73,9 @@ const App = () => {
         <Header onResetTeams={handleResetTeams} />
         <Routes>
           <Route exact path="/" element={<Login />} />
-          <Route path="/playerManager" element={<PlayerManager />} />
+          <Route path="/playerManager" element={<PlayerManager ref={playerManagerRef} />} />
           <Route path="/selected-team" element={<SelectedTeam ref={teamRef} />} />
+          <Route path="/team-management" element={<TeamManagement />} />
         </Routes>
       </div>
     </Router>

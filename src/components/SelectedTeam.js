@@ -141,6 +141,8 @@ const SelectedTeam = forwardRef((props, ref) => {
           teamId: "",
           teamName: "",
           bidPrice: null,
+          defaultOwner: false,
+          isOwner: false,
         });
       });
 
