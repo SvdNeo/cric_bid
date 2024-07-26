@@ -330,9 +330,9 @@ import React, {
   currentTeam.hasPassed = true;
  
   newTeams = newTeams.filter(
-  (team) =>
-  calculateMaxBidPrice(team, players, grades, selectedPlayer) >
-  currentHighestBidPrice
+    (team) =>
+      calculateMaxBidPrice(team, players, grades, selectedPlayer) > currentHighestBidPrice ||
+      team.id === currentHighestBiddingTeam?.id
   );
  
   setTeams([...newTeams]);
