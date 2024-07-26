@@ -523,10 +523,11 @@ import React, {
   ).length;
  
   // Update biddingStartTeamIndex
-  const nextTeam = initialTeams.find((team, index) => index > biddingStartTeamIndex && team.playerCount !== undefined && team.playerCount < 7);
-  const newBiddingStartTeamIndex = nextTeam ? initialTeams.indexOf(nextTeam) : 0;
+  const newBiddingStartTeamIndex =
+  (biddingStartTeamIndex + 1) % currentBidTeamLength;
   setBiddingStartTeamIndex(newBiddingStartTeamIndex);
   setCurrentBiddingTeamIndex(newBiddingStartTeamIndex);
+ 
  
   // Save the new biddingStartTeamIndex to localStorage
   localStorage.setItem(
