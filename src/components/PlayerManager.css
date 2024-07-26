@@ -144,4 +144,19 @@ button {
     width: 100%;
     margin-top: 10px;
   }
+  .default-owner-checkbox {
+    margin-right: 0.5rem;
+  }
+  
+  .default-owner-text {
+    font-weight: bold;
+  }
+  
+  /* Styles for the team name select dropdown */
+  .team-name-select {
+    padding: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 1rem;
+  }
 }
