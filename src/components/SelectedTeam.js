@@ -126,6 +126,7 @@ import React, {
   balance: 10000,
   playerCount: 0,
   hasPassed: false,
+  defaultOwner: null
   });
   } else {
   throw new Error(`Invalid team data: ${JSON.stringify(team)}`);
@@ -160,17 +161,18 @@ import React, {
   resetTeams,
   }));
   const renderPlayers = (teamId) => {
-  return initialPlayers
-  .filter((player) => player.teamId === teamId)
-  .sort((a, b) => a.grade.localeCompare(b.grade))
-  .map((player) => (
-  <tr key={player.id} onClick={() => handleDeletePlayer(player)}>
-  <td>{player.name}</td>
-  <td>{player.grade}</td>
-  <td>{player.bidPrice}</td>
-  </tr>
-  ));
+    return initialPlayers
+      .filter((player) => player.teamId === teamId || (player.teamName === initialTeams.find(team => team.id === teamId)?.teamname && player.status === 'sold'))
+      .sort((a, b) => a.grade.localeCompare(b.grade))
+      .map((player) => (
+        <tr key={player.id} onClick={() => handleDeletePlayer(player)}>
+          <td>{player.name}</td>
+          <td>{player.grade}</td>
+          <td>{player.bidPrice || '-'}</td>
+        </tr>
+      ));
   };
+  
  
   const colorCode = { new: "black", unsold: "red", sold: "blue" };
   const renderPlayersByGrade = (grade) => {
