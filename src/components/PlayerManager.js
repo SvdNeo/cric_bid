@@ -14,7 +14,7 @@ const PlayerManager = () => {
   const [playerToDelete, setPlayerToDelete] = useState(null);
   const [isDefaultOwner, setIsDefaultOwner] = useState(false);
   const [selectedTeamName, setSelectedTeamName] = useState('');
-  const [price, setPrice] = useState(0);
+  const [price, setPrice] = useState();
   const [teams, setTeams] = useState([]);
   
 
@@ -239,15 +239,15 @@ const handleAddPlayer = async () => {
               </option>
             ))}
           </select>
-          <div>
+          <div className='checkbox-container'>
             <label>
               <input
                 type="checkbox"
                 checked={isDefaultOwner}
                 onChange={handleDefaultOwnerChange}
               />
-              Default Owner
-            </label>
+               <span style={{ marginLeft: '28px' }}>Default Owner</span>
+</label>
             {isDefaultOwner && (
               <>
                 <select value={selectedTeamName} onChange={(e) => setSelectedTeamName(e.target.value)}>
