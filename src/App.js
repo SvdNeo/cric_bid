@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Route, Link, Routes } from 'react-router-dom';
 import './App.css';
 import PlayerManager from './components/PlayerManager';
 import SelectedTeam from './components/SelectedTeam';
+import TeamManagement from './components/TeamManagement';
 import Login from './components/Login';
 import { useAuthState } from "react-firebase-hooks/auth";
 import { useNavigate } from "react-router-dom";
@@ -51,6 +52,9 @@ const Header = ({ onResetTeams }) => {
                 <Link to="/">Home</Link>
               </li>
               <li>
+                <Link to="/team-management">Team Management</Link>
+              </li>
+              <li>
                 <Link to="/selected-team">Selected Team</Link>
               </li>
               <li>
@@ -83,6 +87,7 @@ const App = () => {
         <Routes>
           <Route exact path="/" element={<Login />} />
           <Route path="/playerManager" element={<PlayerManager />} />
+          <Route path="/team-management" element={<TeamManagement />} />
           <Route path="/selected-team" element={<SelectedTeam ref={teamRef} />} />
         </Routes>
       </div>
