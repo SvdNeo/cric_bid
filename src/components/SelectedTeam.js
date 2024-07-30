@@ -64,9 +64,7 @@ import React, {
   }));
   setInitialTeams(teamsList);
   setTeams(
-  teamsList.filter(
-  (team) => team.playerCount !== undefined && team.playerCount < 7
-  )
+  teamsList
   );
  
   const gradesSnapshot = await getDocs(collection(db, "grade"));
