@@ -226,7 +226,8 @@ import React, {
       if (remainingTeams.length === 1) {
         const winningTeam = remainingTeams[0];
         const playersOnWinningTeam = players.filter(
-          (player) => player.teamId === winningTeam.id
+          (player) => player.teamId === winningTeam.id||
+          (player.teamName === winningTeam.teamname && player.status === 'sold')
         );
         if (playersOnWinningTeam.length >= 7) {
           setError("Team already has 7 players. Cannot add more.");
