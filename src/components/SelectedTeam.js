@@ -162,17 +162,18 @@ import React, {
   resetTeams,
   }));
   const renderPlayers = (teamId) => {
-  return initialPlayers
-  .filter((player) => player.teamId === teamId)
-  .sort((a, b) => a.grade.localeCompare(b.grade))
-  .map((player) => (
-  <tr key={player.id} onClick={() => handleDeletePlayer(player)}>
-  <td>{player.name}</td>
-  <td>{player.grade}</td>
-  <td>{player.bidPrice}</td>
-  </tr>
-  ));
+    return initialPlayers
+      .filter((player) => player.teamId === teamId || (player.teamName === initialTeams.find(team => team.id === teamId)?.teamname && player.status === 'sold'))
+      .sort((a, b) => a.grade.localeCompare(b.grade))
+      .map((player) => (
+        <tr key={player.id} onClick={() => handleDeletePlayer(player)}>
+          <td>{player.name}</td>
+          <td>{player.grade}</td>
+          <td>{player.bidPrice || '-'}</td>
+        </tr>
+      ));
   };
+  
  
   const colorCode = { new: "black", unsold: "red", sold: "blue" };
   const renderPlayersByGrade = (grade) => {
@@ -226,8 +227,9 @@ import React, {
   if (remainingTeams.length === 1) {
   const winningTeam = remainingTeams[0];
   const playersOnWinningTeam = players.filter(
-  (player) => player.teamId === winningTeam.id
-  );
+  (player) => player.teamId === winningTeam.id||
+  (player.teamName === winningTeam.teamname && player.status === 'sold')
+);
   if (playersOnWinningTeam.length >= 7) {
   setError("Team already has 7 players. Cannot add more.");
   return;
