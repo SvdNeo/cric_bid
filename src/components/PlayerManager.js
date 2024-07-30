@@ -15,6 +15,7 @@ const PlayerManager = () => {
   const [isDefaultOwner, setIsDefaultOwner] = useState(false);
   const [selectedTeamName, setSelectedTeamName] = useState('');
   const [price, setPrice] = useState(0);
+  const [teams, setTeams] = useState([]);
   
 
   useEffect(() => {
@@ -38,51 +39,65 @@ const PlayerManager = () => {
       }
     };
 
-    fetchGrades();
-    fetchPlayers();
-  }, []);
-
-  const handleAddPlayer = async () => {
-    if (playerName && grade) {
-      const newPlayer = { name: playerName, grade, status: 'new' };
-      try {
-        const playerRef = await addDoc(collection(db, 'players'), newPlayer);
-        const playerId = playerRef.id;
-  
-        if (isDefaultOwner && selectedTeamName && price) {
-          // Update the player document with the team name, default owner status, and other fields
-          await updateDoc(doc(db, 'players', playerId), {
-            teamName: selectedTeamName,
-            status: 'sold',
-            defaultOwner: true,
-            bidPrice: price,
-          });
-  
-          // Update the team document with the player count and balance
-          const teamDoc = doc(db, 'teams', selectedTeamName);
-          const teamData = (await getDocs(teamDoc)).data();
-          const updatedBalance = teamData.balance - price;
-          const updatedPlayerCount = teamData.playerCount + 1;
-          await updateDoc(teamDoc, {
-            balance: updatedBalance,
-            playerCount: updatedPlayerCount,
-          });
-        }
-  
-        setPlayers([...players, { id: playerId, ...newPlayer }]);
-        setPlayerName('');
-        setGrade('');
-        setIsDefaultOwner(false);
-        setSelectedTeamName('');
-        setPrice(0);
-        setErrorMessage('');
-      } catch (error) {
-        console.error("Error adding player: ", error);
-      }
-    } else {
-      setErrorMessage('Please enter required fields');
+    // Fetch teams from Firestore
+  const fetchTeams = async () => {
+    try {
+      const teamCollection = await getDocs(collection(db, 'teams'));
+      setTeams(teamCollection.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    } catch (error) {
+      console.error("Error fetching teams: ", error);
     }
   };
+
+  fetchGrades();
+  fetchPlayers();
+  fetchTeams();
+}, []);
+  
+const handleAddPlayer = async () => {
+  if (playerName && grade) {
+    const newPlayer = { name: playerName, grade, status: 'new' };
+    try {
+      const playerRef = await addDoc(collection(db, 'players'), newPlayer);
+      const playerId = playerRef.id;
+
+      if (isDefaultOwner && selectedTeamName) {
+        const selectedTeam = teams.find(team => team.teamname === selectedTeamName);
+        if (selectedTeam && selectedTeam.defaultOwner) {
+          setErrorMessage(`${selectedTeamName} already has a default owner.`);
+          return;
+        }
+
+        // Update the player document with the team name, default owner status, and other fields
+        await updateDoc(doc(db, 'players', playerId), {
+          teamName: selectedTeamName,
+          status: 'sold',
+          defaultOwner: true,
+          bidPrice: price,
+        });
+
+        // Update the team document with the default owner and player count
+        const teamDoc = doc(db, 'teams', selectedTeamName);
+        await updateDoc(teamDoc, {
+          defaultOwner: playerId,
+          playerCount: (selectedTeam?.playerCount || 0) + 1,
+        });
+      }
+
+      setPlayers([...players, { id: playerId, ...newPlayer }]);
+      setPlayerName('');
+      setGrade('');
+      setIsDefaultOwner(false);
+      setSelectedTeamName('');
+      setPrice(0);
+      setErrorMessage('');
+    } catch (error) {
+      console.error("Error adding player: ", error);
+    }
+  } else {
+    setErrorMessage('Please enter required fields');
+  }
+};
   
 
   const handleEditPlayer = (id) => {
@@ -104,6 +119,13 @@ const PlayerManager = () => {
           const teamSnapshot = await getDocs(collection(db, 'teams'));
           const teamData = teamSnapshot.docs.find(doc => doc.data().teamname === selectedTeamName);
           const teamId = teamData?.id;
+  
+          // Check if the selected team already has a default owner
+          const selectedTeam = teams.find(team => team.id === teamId);
+          if (selectedTeam && selectedTeam.defaultOwner && selectedTeam.defaultOwner !== editingPlayer.id) {
+            setErrorMessage(`${selectedTeamName} already has a default owner.`);
+            return;
+          }
   
           // Update the player document with the team name, default owner status, and other fields
           await updateDoc(playerDoc, {
@@ -129,6 +151,7 @@ const PlayerManager = () => {
               await updateDoc(teamDoc, {
                 balance: updatedBalance,
                 playerCount: updatedPlayerCount,
+                defaultOwner: editingPlayer.id, // Set the default owner for the team
               });
             }
           }
@@ -157,7 +180,6 @@ const PlayerManager = () => {
       setErrorMessage('Please enter required fields');
     }
   };
-  
   
   
 

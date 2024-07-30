@@ -128,6 +128,7 @@ import React, {
   balance: 10000,
   playerCount: 0,
   hasPassed: false,
+  defaultOwner: null
   });
   } else {
   throw new Error(`Invalid team data: ${JSON.stringify(team)}`);
