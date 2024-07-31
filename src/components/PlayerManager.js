@@ -78,12 +78,18 @@ const handleAddPlayer = async () => {
 
         // Update the team document with the default owner and player count
         const teamDoc = doc(db, 'teams', selectedTeamName);
-        await updateDoc(teamDoc, {
-          defaultOwner: playerId,
-          playerCount: (selectedTeam?.playerCount || 0) + 1,
-        });
-      }
-
+await updateDoc(teamDoc, {
+  defaultOwner: playerId,
+  playerCount: (selectedTeam?.playerCount || 0) + 1,
+  teamname: playerName // Change team name to owner's name
+})
+await updateDoc(doc(db, 'players', playerId), {
+  teamName: selectedTeamName,
+  status: 'sold',
+  defaultOwner: true,
+  bidPrice: price,
+  isOwner: true // Add this field to easily identify owners
+})
       setPlayers([...players, { id: playerId, ...newPlayer }]);
       setPlayerName('');
       setGrade('');
@@ -91,7 +97,7 @@ const handleAddPlayer = async () => {
       setSelectedTeamName('');
       setPrice(0);
       setErrorMessage('');
-    } catch (error) {
+    }} catch (error) {
       console.error("Error adding player: ", error);
     }
   } else {
@@ -141,20 +147,32 @@ const handleAddPlayer = async () => {
           if (teamId) {
             const teamDoc = doc(db, 'teams', teamId);
             const teamData = (await getDoc(teamDoc)).data();
-  
+          
             if (teamData) {
               const existingPlayerCount = teamData.playerCount || 0;
               const existingBalance = teamData.balance || 10000;
               const updatedBalance = existingBalance - price;
               const updatedPlayerCount = existingPlayerCount + 1;
-  
+          
               await updateDoc(teamDoc, {
                 balance: updatedBalance,
                 playerCount: updatedPlayerCount,
-                defaultOwner: editingPlayer.id, // Set the default owner for the team
+                defaultOwner: editingPlayer.id,
+                teamname: `${playerName}'s Team` // Change team name to owner's name
               });
             }
           }
+          
+          // Update the player document
+          await updateDoc(playerDoc, {
+            ...updatedPlayer,
+            teamName: selectedTeamName,
+            status: 'sold',
+            defaultOwner: true,
+            bidPrice: price,
+            teamId: teamId || '',
+            isOwner: true // Add this field to easily identify owners
+          });
         } else {
           // Update the player document without the default owner fields
           await updateDoc(playerDoc, {
@@ -276,20 +294,20 @@ const handleAddPlayer = async () => {
           )}
           {errorMessage && <p className="error-message">{errorMessage}</p>}
         </div>
-      <div className="players-list">
-        <h2>Players List</h2>
-        <ul>
-          {sortedPlayers.map(player => (
-            <li key={player.id}>
-              {player.name} - {player.grade}
-              <div className="player-buttons">
-                <button className="edit-button" onClick={() => handleEditPlayer(player.id)}>Edit</button>
-                <button className="delete-button" onClick={() => confirmDeletePlayer(player.id)}>Delete</button>
-              </div>
-            </li>
-          ))}
-        </ul>
-      </div>
+        <div className="players-list">
+  <h2>Players List</h2>
+  <ul>
+    {sortedPlayers.map(player => (
+      <li key={player.id}>
+        {player.name} - {player.grade}
+        <div className="player-buttons">
+          <button className="edit-button" onClick={() => handleEditPlayer(player.id)}>Edit</button>
+          <button className="delete-button" onClick={() => confirmDeletePlayer(player.id)}>Delete</button>
+        </div>
+      </li>
+    ))}
+  </ul>
+</div>
       {showDeleteConfirmation && (
         <div className="modal">
           <div className="modal-content">

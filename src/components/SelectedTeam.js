@@ -126,7 +126,8 @@ import React, {
   balance: 10000,
   playerCount: 0,
   hasPassed: false,
-  defaultOwner: null
+  defaultOwner: null,
+  teamname:`T${team.teamId}`
   });
   } else {
   throw new Error(`Invalid team data: ${JSON.stringify(team)}`);
@@ -141,6 +142,7 @@ import React, {
   teamId: "",
   teamName: "",
   bidPrice: null,
+  defaultOwner:false
   });
   });
  
@@ -166,7 +168,11 @@ import React, {
       .sort((a, b) => a.grade.localeCompare(b.grade))
       .map((player) => (
         <tr key={player.id} onClick={() => handleDeletePlayer(player)}>
-          <td>{player.name}</td>
+      <td>
+  {player.name}
+  {player.defaultOwner && <span> (O)</span>}
+</td>
+
           <td>{player.grade}</td>
           <td>{player.bidPrice || '-'}</td>
         </tr>
