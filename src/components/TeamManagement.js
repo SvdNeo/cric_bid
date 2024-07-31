@@ -71,7 +71,7 @@ const TeamManagement = () => {
           {teamData.map((team, index) => (
             <tr key={index}>
               <td>{`Team${index + 1}`}</td>
-              <td>{team.teamName}</td>
+              <td>{team.teamName.split("'s Team")[0]}</td>
             </tr>
           ))}
         </tbody>
