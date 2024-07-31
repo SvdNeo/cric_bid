@@ -122,6 +122,15 @@ button {
   width: 90%; 
   max-width: 300px;
 }
+.checkbox-container{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 80%;
+    max-width: 365px;
+    min-width: 70px;
+}
 
 /* Responsive styles */
 @media (max-width: 576px) {
@@ -144,4 +153,20 @@ button {
     width: 100%;
     margin-top: 10px;
   }
+  .default-owner-checkbox {
+    margin-right: 0.5rem;
+  }
+  
+  .default-owner-text {
+    font-weight: bold;
+  }
+  
+  /* Styles for the team name select dropdown */
+  .team-name-select {
+    padding: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 1rem;
+  }
+  
 }
