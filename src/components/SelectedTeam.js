@@ -344,7 +344,9 @@ import React, {
   const handleBidPass = () => {
   setDisableAction(true);
   let newTeams = teams.filter(
-  (_, index) => index !== currentBiddingTeamIndex
+    (team, index) => 
+      index !== currentBiddingTeamIndex && 
+      team.playerCount < 7 
   );
   const currentTeam = teams[currentBiddingTeamIndex];
   currentTeam.hasPassed = true;
