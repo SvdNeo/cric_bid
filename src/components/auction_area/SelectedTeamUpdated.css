@@ -1,113 +1,14 @@
 .selected-team-container {
-  overflow-x: auto;
   display: grid;
   grid-template-columns: 1fr; 
-  grid-template-rows: 0.3fr 0.8fr 0.5fr; 
+  grid-template-rows: 0.2fr 1fr 0.6fr; 
   gap: 10px; 
   padding: 10px;
   height: 100vh; 
-  overflow-x: auto;
-}
-.success-popup.winning-bid {
-  background-color: goldenrod; /* or any other color you prefer */
-  color: white; /* adjust the text color as needed */
-}
-.grade-section {
-  background-color: #f9f9f9;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  padding: 10px;
-  min-width: 250px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
 }
 
-.grade-section h3 {
-  margin-top: 0;
-  margin-bottom: 10px; /* Add some spacing between the heading and the player list */
-}
-
-.grade-section ul {
-  list-style: none;
-  padding: 0;
-  
-}
-.team-status-circle {
-  display: inline-block;
-  width: 18px;
-  height: 18px;
-  border-radius: 50% !important;
-  margin-right: 10px;
-  flex-shrink: 0;
-}
-
-.team-status-circle.cannot-bid {
-  background-color: red;
-}
-
-.team-status-circle.bidding-over {
-  background-color:orange;
-}
-
-.team-status-circle.current-highest-bidder {
-  background-color: green;
-}
-
-.team-status-circle.bidding-eligible {
-  background-color: yellow;
-}
-.teams-container table td {
-  white-space: nowrap;
-  /* overflow: hidden; */
-  text-overflow: ellipsis;
-  max-width: 120px; /* Adjust this value as needed */
-}
-.bidding-section {
-  display: flex;
-  flex-direction: column;
-  height: 0.2fr;
-}
-
-.bidding-form-container {
-  height: 0.1fr;
-}
-
-.bidding-info-container {
-  height: 0.1fr;
-  display: flex;
-  
-}
-
-.bidding-info-left {
-  width: 40%;
-  height: 0.1fr;
-  
-}
-
-.bidding-info-right {
-  width: 60%;
-  height: 0.1fr;
-  
-  position: relative;
-}
-
-
-
-
-
-
-
-.team-display{
-  display: flex;
-  
-  
-  justify-content: space-between;
-  
-}
 .bidding-area {
   padding: 10px;
-  
 }
 
 button {
@@ -127,25 +28,9 @@ button:disabled {
 button:disabled:hover {
   background-color: inherit;
 }
-.current-highest-bid{
-  height: 30px;
-}
+
 .disabled-hover:disabled:hover {
   background-color: inherit;
-}
-
-.current-highest-bidder {
-  background-color: green;
-  color: black;
-  padding: 5px;
-  border-radius: 4px;
-}
-
-.bidding-eligible {
-  background-color: yellow;
-  color: black;
-  padding: 5px;
-  border-radius: 4px;
 }
 
 button:hover {
@@ -155,38 +40,19 @@ button:hover {
  {
   background-color: skyblue;
  }
- .team-names-container {
-  display: flex;
-  justify-content: space-between;
-}
 .success-popup {
-  
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   background-color: #4caf50;
   color: white;
-  padding: 10px;
+  padding: 20px;
   border-radius: 5px;
   z-index: 999;
   text-align: center;
   display: flex;
   flex-direction: column;
-  width: 100%;
-  height: 100%;
-  position:absolute;
-  top: 0;
-  left: 0;
-  justify-content: center;
-  align-items: center;
-  overflow: hidden; 
-  white-space: nowrap; 
-  text-overflow: ellipsis
-}
-
-.bidding-info-left span {
-  margin-right: 5px;
-}
-
-.current-bidding-team {
-  white-space:nowrap;
 }
 
 .success-popup button {
@@ -207,7 +73,7 @@ button:hover {
 
 .teams-container {
   padding: 10px;
-  /* overflow-x: hidden; Hide horizontal overflow */
+  overflow-x: hidden; /* Hide horizontal overflow */
 }
 
 .reset {
@@ -244,23 +110,21 @@ button:hover {
   border-right: 1px solid #ccc;
 }
 
+
+
 .bidding-form {
   display: flex;
   justify-content: space-around;
   width: 100%;
   align-items: center;
-  gap:20px;
-  height: 3.75rem;
-  white-space: nowrap;
 }
 
 .grades-container {
   width: 100%;
   padding: 10px;
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr ; 
+  grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr; 
   gap: 10px; 
-  height: fit-content;
 }
 
 .team,
@@ -358,8 +222,100 @@ li:hover {
   padding: 2px 5px; /* Adjust the padding values as needed */
 }
 
+/* Responsive styles */
+@media (max-width: 992px) {
+  .teams {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
 
-.teams-container table td, 
-.teams-container table th {
-  line-height: 30px; /* Set the row height */
+  .grades-container {
+    grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+  }
+
+  .selected-team-container {
+    grid-template-rows: 0.4fr 1.2fr 0.4fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .teams {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .grades-container {
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+  }
+
+  .bidding-form {
+    flex-direction: column;
+  }
+
+  .selected-team-container {
+    grid-template-rows: auto auto auto;
+    height: auto;
+  }
+}
+
+@media (max-width: 576px) {
+  .teams {
+    grid-template-columns: 1fr;
+  }
+
+  .grades-container {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+
+  .selected-team-container {
+    grid-template-rows: auto auto auto;
+    height: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .grades-container {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .selected-team-container {
+    grid-template-rows: auto auto auto;
+    height: auto;
+  }
+
+  .bidding-title {
+    font-size: 14px;
+  }
+
+  .bidding-area {
+    height: auto;
+    padding: 5px;
+  }
+
+  .bidding-form {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .btn-reset {
+    padding: 8px 16px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 360px) {
+  .grades-container {
+    grid-template-columns: 1fr;
+  }
+
+  .selected-team-container {
+    grid-template-rows: auto auto auto;
+    height: auto;
+  }
+  .current-bidding-team {
+    font-weight: bold;
+    margin-bottom: 10px;
+  }
+  .btn-reset {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
 }
