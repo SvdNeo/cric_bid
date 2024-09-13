@@ -39,11 +39,19 @@ const SelectedTeam = forwardRef((props, ref) => {
   const [disableAction, setDisableAction] = useState(false);
   const [currentHighestBiddingTeam, setCurrentHighestBiddingTeam] =
     useState(null);
+  const [allowedPlayerLength, setAllowedPlayerLength] = useState(null);
+  const [teamsWithAdditionalPlayers, setTeamsWithAdditionalPlayers] =
+    useState(0);
   useEffect(() => {
     fetchData();
     loadBiddingStartTeamIndex();
   }, []);
-
+ 
+  // useEffect(() => {
+  //   if (initialTeams.length > 0 && players.length > 0) {
+  //     updateAllowedPlayers(initialTeams, players);
+  //   }
+  // }, [initialTeams, players]);
   const loadBiddingStartTeamIndex = () => {
     const savedBiddingStartTeamIndex = localStorage.getItem(
       "biddingStartTeamIndex"
@@ -54,7 +62,38 @@ const SelectedTeam = forwardRef((props, ref) => {
       setCurrentBiddingTeamIndex(index);
     }
   };
+  function updateAllowedPlayers(teams,players){
+    const T = teams.length;
+    const P = players.length;
+    const N = P / T;
+    const NC = Math.ceil(N); //2
+    let ATAP = P % T; // 2
+    const NF = Math.floor(N); //1
+   teams.forEach((team)=>{
+    if(team.playerCount === NC){
+      ATAP = ATAP - 1
+    }
+   })
+   if(ATAP > 0){
+    setAllowedPlayerLength(NC);
+   }else{
+    setAllowedPlayerLength(NF);
+   }
+    
+    setTeamsWithAdditionalPlayers(ATAP);
+  };
+  function updateAllowedPlayersAfterBid(teams,players){
+    const T = teams.length;
+    const P = players.length;
+    const N = P / T;
+   if(teamsWithAdditionalPlayers > 0){
+    setTeamsWithAdditionalPlayers(teamsWithAdditionalPlayers-1);
 
+   }
+   if(teamsWithAdditionalPlayers === 0) {
+    setAllowedPlayerLength(Math.floor(N))
+   }
+    };
   const fetchData = async () => {
     try {
       const teamsSnapshot = await getDocs(collection(db, "teams"));
@@ -63,8 +102,10 @@ const SelectedTeam = forwardRef((props, ref) => {
         ...doc.data(),
       }));
       setInitialTeams(teamsList);
-      setTeams(teamsList);
 
+      setTeams(teamsList);
+      const teamsWithEightPlayers = teamsList.filter(team => team.playerCount === 8).length;
+      setTeamsWithAdditionalPlayers(teamsWithEightPlayers === 1 ? 1 : 0);
       const gradesSnapshot = await getDocs(collection(db, "grade"));
       const gradesList = {};
       gradesSnapshot.forEach((doc) => {
@@ -95,6 +136,7 @@ const SelectedTeam = forwardRef((props, ref) => {
         // If not all teams are reset, load the saved index
         loadBiddingStartTeamIndex();
       }
+      updateAllowedPlayers(teamsList,playersList);
     } catch (error) {
       setError("Failed to fetch data. Please try again.");
     }
@@ -177,7 +219,6 @@ const SelectedTeam = forwardRef((props, ref) => {
             {player.defaultOwner && <span> (O)</span>}
           </td>
 
-     
           <td>{player.bidPrice || "-"}</td>
         </tr>
       ));
@@ -240,8 +281,12 @@ const SelectedTeam = forwardRef((props, ref) => {
             (player.teamName === winningTeam.teamname &&
               player.status === "sold")
         );
-        if (playersOnWinningTeam.length >= 7) {
-          setError("Team already has 7 players. Cannot add more.");
+        let tempMaxAllowedPlayerCount = allowedPlayerLength
+        // let tempMaxAllowedPlayerCount = teamsWithAdditionalPlayers > 0 ? 8 : 7;
+        if (playersOnWinningTeam.length >= tempMaxAllowedPlayerCount) {
+          setError(
+            `Team already has ${tempMaxAllowedPlayerCount} players. Cannot add more.`
+          );
           return;
         }
 
@@ -266,7 +311,15 @@ const SelectedTeam = forwardRef((props, ref) => {
             ? winningTeam.playerCount + 1
             : 1,
         };
-
+         if (updatedTeam.playerCount === allowedPlayerLength) {
+          updateAllowedPlayersAfterBid(initialTeams,players)
+    //   const T = initialTeams.length;
+    //   const P = players.length;
+    //   const newAllowedPlayerLength = Math.ceil(P / T);
+    //   setAllowedPlayerLength(newAllowedPlayerLength);
+    //   setTeamsWithAdditionalPlayers(P % T);
+    }
+    
         if (updatedTeam.balance <= 0) {
           updatedTeam.balance = 0;
         }
@@ -296,7 +349,7 @@ const SelectedTeam = forwardRef((props, ref) => {
 
         const teamDoc = doc(db, "teams", winningTeam.id);
         updateDoc(teamDoc, updatedTeam);
-
+        setTeamsWithAdditionalPlayers(teamsWithAdditionalPlayers - 1);
         setPopupMessage(
           `${winningTeam.teamname} has won the bid for ${selectedPlayer.name} for an Auction Price of ${currentBidPrice}`
         );
@@ -323,6 +376,8 @@ const SelectedTeam = forwardRef((props, ref) => {
         setTempBidPrice(nextBidPrice);
         setStartingBidPrice(nextBidPrice);
         let nextTeamIndex = (currentBiddingTeamIndex + 1) % tempTeams.length;
+        let tempMaxAllowedPlayerCount = allowedPlayerLength
+        // let tempMaxAllowedPlayerCount = teamsWithAdditionalPlayers > 0 ? 8 : 7;
         while (
           calculateMaxBidPrice(
             tempTeams[nextTeamIndex],
@@ -331,7 +386,7 @@ const SelectedTeam = forwardRef((props, ref) => {
             selectedPlayer
           ) < nextBidPrice ||
           nextTeamIndex === currentBiddingTeamIndex ||
-          tempTeams[nextTeamIndex].playerCount >= 7
+          tempTeams[nextTeamIndex].playerCount >= tempMaxAllowedPlayerCount
         ) {
           if (nextTeamIndex === currentBiddingTeamIndex) {
             handleBidSubmit([currentTeam]);
@@ -348,8 +403,12 @@ const SelectedTeam = forwardRef((props, ref) => {
   };
   const handleBidPass = () => {
     setDisableAction(true);
+    let tempMaxAllowedPlayerCount = allowedPlayerLength
+    // let tempMaxAllowedPlayerCount = teamsWithAdditionalPlayers > 0 ? 8 : 7;
     let newTeams = teams.filter(
-      (team, index) => index !== currentBiddingTeamIndex && team.playerCount < 7
+      (team, index) =>
+        index !== currentBiddingTeamIndex &&
+        team.playerCount < tempMaxAllowedPlayerCount
     );
     const currentTeam = teams[currentBiddingTeamIndex];
     currentTeam.hasPassed = true;
@@ -364,11 +423,11 @@ const SelectedTeam = forwardRef((props, ref) => {
     if (
       currentHighestBiddingTeam &&
       (!newTeams[currentHighestBiddingTeamIndex] ||
-        newTeams[currentHighestBiddingTeamIndex].id !=
+        newTeams[currentHighestBiddingTeamIndex].id !==
           currentHighestBiddingTeam.id)
     ) {
       for (let i = 0; i < newTeams.length; i++) {
-        if (currentHighestBiddingTeam.id == newTeams[i].id) {
+        if (currentHighestBiddingTeam.id === newTeams[i].id) {
           setCurrentHighestBiddingTeamIndex(i);
         }
       }
@@ -408,11 +467,13 @@ const SelectedTeam = forwardRef((props, ref) => {
     if (newTeams.length === 1 && currentHighestBiddingTeamIndex !== null) {
       // Check if any other team can still bid
       const canAnyOtherTeamBid = teams.some(
-        (team, index) =>
-          index !== currentHighestBiddingTeamIndex &&
+        (team, index) =>{
+          return index !== currentHighestBiddingTeamIndex &&
           !team.hasPassed &&
           calculateMaxBidPrice(team, players, grades, selectedPlayer) >
-            currentHighestBidPrice
+            currentHighestBidPrice && team.playerCount !== undefined &&
+            team.playerCount <= tempMaxAllowedPlayerCount
+        }
       );
 
       if (!canAnyOtherTeamBid) {
@@ -476,7 +537,7 @@ const SelectedTeam = forwardRef((props, ref) => {
         setTimeout(() => {
           setPopupMessage("");
         }, 3000);
-        if (currentHighestBiddingTeamIndex == newTeams.length) {
+        if (currentHighestBiddingTeamIndex === newTeams.length) {
           setCurrentHighestBiddingTeamIndex(currentHighestBiddingTeamIndex - 1);
           setCurrentHighestBiddingTeam(
             newTeams[currentHighestBiddingTeamIndex - 1]
@@ -528,9 +589,13 @@ const SelectedTeam = forwardRef((props, ref) => {
       hasPassed: false,
     }));
     setInitialTeams(updatedTeams);
+    // let tempMaxAllowedPlayerCount = teamsWithAdditionalPlayers > 0 ? 8 : 7;
+    let tempMaxAllowedPlayerCount = allowedPlayerLength
     setTeams(
       updatedTeams.filter(
-        (team) => team.playerCount !== undefined && team.playerCount < 7
+        (team) =>
+          team.playerCount !== undefined &&
+          team.playerCount < tempMaxAllowedPlayerCount
       )
     );
   };
@@ -551,10 +616,15 @@ const SelectedTeam = forwardRef((props, ref) => {
     // Find the next eligible team for bidding
     let newBiddingStartTeamIndex = biddingStartTeamIndex;
     let teamsChecked = 0;
+    let tempMaxAllowedPlayerCount = allowedPlayerLength
+    // let tempMaxAllowedPlayerCount = teamsWithAdditionalPlayers > 0 ? 8 : 7;
     while (teamsChecked < initialTeams.length) {
       newBiddingStartTeamIndex =
         (newBiddingStartTeamIndex + 1) % initialTeams.length;
-      if (initialTeams[newBiddingStartTeamIndex].playerCount < 7) {
+      if (
+        initialTeams[newBiddingStartTeamIndex].playerCount <
+        tempMaxAllowedPlayerCount
+      ) {
         break;
       }
       teamsChecked++;
@@ -630,8 +700,13 @@ const SelectedTeam = forwardRef((props, ref) => {
         // Find the next eligible team for bidding
         let newBiddingStartTeamIndex = biddingStartTeamIndex;
         let teamsChecked = 0;
+        let tempMaxAllowedPlayerCount = allowedPlayerLength
+        // let tempMaxAllowedPlayerCount = teamsWithAdditionalPlayers > 0 ? 8 : 7;
         while (teamsChecked < initialTeams.length) {
-          if (initialTeams[newBiddingStartTeamIndex].playerCount < 7) {
+          if (
+            initialTeams[newBiddingStartTeamIndex].playerCount <
+            tempMaxAllowedPlayerCount
+          ) {
             break;
           }
           newBiddingStartTeamIndex =
@@ -660,8 +735,10 @@ const SelectedTeam = forwardRef((props, ref) => {
     grades,
     currentBiddingPlayer
   ) => {
+    // let tempMaxAllowedPlayerCount = teamsWithAdditionalPlayers > 0 ? 8 : 7;
+    let tempMaxAllowedPlayerCount = allowedPlayerLength
     const teamPlayerCount = team.playerCount || 0;
-    const remainingPlayers = 7 - teamPlayerCount;
+    const remainingPlayers = tempMaxAllowedPlayerCount - teamPlayerCount;
 
     // Exclude the current bidding player from the top players calculation
     unbidPlayers = unbidPlayers.filter(
@@ -688,9 +765,12 @@ const SelectedTeam = forwardRef((props, ref) => {
             (sum, player) => sum + grades[player.grade].price,
             0
           );
-
+          let tempMaxAllowedPlayerCount = allowedPlayerLength
+        // let tempMaxAllowedPlayerCount = teamsWithAdditionalPlayers > 0 ? 8 : 7;
         if (removedPlayer) {
-          const remainingCount = 7 - (teamPlayerCount + selectedPlayers.length);
+          const remainingCount =
+            tempMaxAllowedPlayerCount -
+            (teamPlayerCount + selectedPlayers.length);
           if (remainingCount > 0) {
             selectedPlayers.unshift(removedPlayer);
             remainingBalance += grades[removedPlayer.grade].price;
@@ -710,54 +790,49 @@ const SelectedTeam = forwardRef((props, ref) => {
     grades,
     currentBiddingPlayer
   ) => {
-    // Filter out unbid players
     const unbidPlayers = players.filter(
       (player) =>
         (player.status === "new" || player.status === "unsold") &&
         player.id !== currentBiddingPlayer?.id
     );
-    console.log(currentBiddingPlayer);
-    // Get the top players for the team
     const topPlayers = getTopPlayerForTeam(
       team,
       unbidPlayers,
       grades,
       currentBiddingPlayer
     );
-    console.log(topPlayers);
-
-    // Calculate the total value of the top players
+  
     const totalTopValues = topPlayers.reduce((sum, player) => {
       const playerGrade = grades[player.grade];
       return sum + (playerGrade ? playerGrade.price : 0);
     }, 0);
-    console.log(totalTopValues);
-
-    // Find the lowest value among the top players
+  
     const lowestValue =
       topPlayers.length === 0
         ? 0
         : Math.min(...topPlayers.map((player) => grades[player.grade].price));
-    console.log(lowestValue);
-
-    // Calculate the remaining top values excluding the lowest value
+  
     const remainingTopValues =
-      unbidPlayers.length === 2 && team.playerCount === 4
+      unbidPlayers.length === 2 && team.playerCount === allowedPlayerLength - 1
         ? totalTopValues
         : totalTopValues === lowestValue
         ? lowestValue
         : totalTopValues - lowestValue;
-
-    console.log(remainingTopValues);
-
-    // Calculate the max bid price
-    const maxBidPrice =
-      team.playerCount === 6 ? team.balance : team.balance - remainingTopValues;
-    console.log(maxBidPrice);
-
-    // Return the max bid price ensuring it is not less than 0
-    return team.balance <= 0 ? 0 : Math.max(maxBidPrice, 0);
+  
+    let maxBidPrice = team.balance - remainingTopValues;
+  
+    // Calculate minimum bid based on team balance and remaining slots
+    const remainingSlots = allowedPlayerLength - team.playerCount;
+    const minBid = remainingSlots > 0 ? Math.floor(team.balance / remainingSlots) : 0;
+  
+    // Ensure maxBidPrice is at least the calculated minBid if team hasn't reached allowedPlayerLength
+    if (team.balance > 0 && team.playerCount < allowedPlayerLength) {
+      maxBidPrice = Math.max(maxBidPrice, minBid);
+    }
+  
+    return Math.min(team.balance, Math.max(maxBidPrice, 0));
   };
+  
 
   const handleDeletePlayer = (player) => {
     setPlayerToDelete(player);
@@ -830,7 +905,11 @@ const SelectedTeam = forwardRef((props, ref) => {
   ) => {
     if (team.id === currentHighestBiddingTeam?.id)
       return "current-highest-bidder";
-    if (team.playerCount === 7) return "cannot-bid";
+    let tempMaxAllowedPlayerCount = allowedPlayerLength !== null ? allowedPlayerLength : Infinity
+     
+    console.log(`tempMaxAllowedPlayerCount - ${tempMaxAllowedPlayerCount} ${team.playerCount}`);
+  
+    if (team.playerCount >= tempMaxAllowedPlayerCount) return "cannot-bid";
     if (team.hasPassed) return "bidding-over";
     if (
       calculateMaxBidPrice(team, players, grades, selectedPlayer) <=
@@ -865,9 +944,7 @@ const SelectedTeam = forwardRef((props, ref) => {
               <div className="bidding-form">
                 {selectedPlayer && (
                   <>
-                    <h2>
-                      {selectedPlayer.name}
-                    </h2>
+                    <h2>{selectedPlayer.name}</h2>
                   </>
                 )}
                 <div></div>
@@ -934,9 +1011,7 @@ const SelectedTeam = forwardRef((props, ref) => {
             </div>
             <div className="bidding-info-container">
               <div className="bidding-info-left">
-                <p className="current-highest-bid">
-                  Current Highest Bid Price: {currentHighestBidPrice}
-                </p>
+               
               </div>
               <div className="bidding-info-right">
                 {popupMessage && (
@@ -972,6 +1047,24 @@ const SelectedTeam = forwardRef((props, ref) => {
           <div className="teams">
             {initialTeams.map((team) => (
               <div className="team" key={team.id}>
+                <h3
+                    style={{
+                      textAlign: "center",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      backgroundColor:
+                        team.id === teams[currentHighestBiddingTeamIndex]?.id
+                          ? "gold"
+                          
+                            : "transparent",
+                      }}
+                    >
+                      {team.id === teams[currentHighestBiddingTeamIndex]?.id
+                        ? currentHighestBidPrice
+                        : ""}{" "}
+                      &nbsp;
+                    </h3>{" "}
                 <h3
                   style={{
                     textAlign: "center",
@@ -1012,10 +1105,10 @@ const SelectedTeam = forwardRef((props, ref) => {
                 </div>
                 <table border="1">
                   <thead>
-                  <tr>
-      <th style={{ width: '65%' }}>Name</th>
-      <th style={{ width: '35%' }}>Price</th>
-    </tr>
+                    <tr>
+                      <th style={{ width: "65%" }}>Name</th>
+                      <th style={{ width: "35%" }}>Price</th>
+                    </tr>
                   </thead>
                   <tbody>{renderPlayers(team.id)}</tbody>
                 </table>
@@ -1030,9 +1123,7 @@ const SelectedTeam = forwardRef((props, ref) => {
             .filter((grade) => grades[grade]) // Ensure only existing grades are rendered
             .map((grade) => (
               <div className="grade-section" key={grade}>
-                <h3>
-                  ({grades[grade].price})
-                </h3>
+                <h3>({grades[grade].price})</h3>
                 <ul>{renderPlayersByGrade(grade)}</ul>
               </div>
             ))}
