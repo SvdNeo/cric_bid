@@ -1116,9 +1116,17 @@ const SelectedTeam = forwardRef((props, ref) => {
     ? "Insufficient balance"
     : ""}
 </h3>
-
-
-
+<h3
+  style={{
+    textAlign: "center",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: team.hasPassed ? "orange" : "transparent",
+  }}
+>
+  {team.hasPassed ? "Team has passed" : ""}
+</h3>
                 <div className="budget">
                   <p>
                     Max Bid Price:{" "}
