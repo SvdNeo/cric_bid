@@ -472,7 +472,7 @@ const SelectedTeam = forwardRef((props, ref) => {
           !team.hasPassed &&
           calculateMaxBidPrice(team, players, grades, selectedPlayer) >
             currentHighestBidPrice && team.playerCount !== undefined &&
-            team.playerCount <= tempMaxAllowedPlayerCount
+            team.playerCount < tempMaxAllowedPlayerCount
         }
       );
 
@@ -840,54 +840,56 @@ const SelectedTeam = forwardRef((props, ref) => {
   };
 
   const handleConfirmDelete = async () => {
-    if (playerToDelete) {
-      const updatedPlayer = {
-        ...playerToDelete,
-        status: "new",
-        teamId: "",
-        teamName: "",
-        bidPrice: null,
-      };
-      const playerDoc = doc(db, "players", playerToDelete.id);
-      await updateDoc(playerDoc, updatedPlayer);
-      const teamRef = doc(db, "teams", playerToDelete.teamId);
-      const teamSnapshot = await getDoc(teamRef); // Use getDoc instead of getDocs
-      const teamData = teamSnapshot.data();
-      if (teamData) {
-        await updateDoc(teamRef, {
-          balance: teamData.balance + playerToDelete.bidPrice,
-          playerCount: teamData.playerCount - 1,
-        });
-      }
-      setPlayers(
-        players.map((player) =>
-          player.id === playerToDelete.id ? updatedPlayer : player
-        )
-      );
-      setInitialPlayers(
-        initialPlayers.map((player) =>
-          player.id === playerToDelete.id ? updatedPlayer : player
-        )
-      );
-      setInitialTeams(
-        initialTeams.map((team) =>
-          team.id === playerToDelete.teamId
-            ? {
-                ...team,
-                balance: teamData.balance + playerToDelete.bidPrice,
-                playerCount: teamData.playerCount - 1,
-              }
-            : team
-        )
-      );
-      setPlayerToDelete(null);
-      setShowDeleteConfirmation(false);
-
-      // Refetch data after deleting a player
-      await fetchData();
+  if (playerToDelete) {
+    const updatedPlayer = {
+      ...playerToDelete,
+      status: "new",
+      teamId: "",
+      teamName: "",
+      bidPrice: null,
+    };
+    const playerDoc = doc(db, "players", playerToDelete.id);
+    await updateDoc(playerDoc, updatedPlayer);
+    const teamRef = doc(db, "teams", playerToDelete.teamId);
+    const teamSnapshot = await getDoc(teamRef);
+    const teamData = teamSnapshot.data();
+    if (teamData) {
+      await updateDoc(teamRef, {
+        balance: teamData.balance + playerToDelete.bidPrice,
+        playerCount: teamData.playerCount - 1,
+      });
     }
-  };
+    setPlayers(
+      players.map((player) =>
+        player.id === playerToDelete.id ? updatedPlayer : player
+      )
+    );
+    setInitialPlayers(
+      initialPlayers.map((player) =>
+        player.id === playerToDelete.id ? updatedPlayer : player
+      )
+    );
+    const updatedTeams = initialTeams.map((team) =>
+      team.id === playerToDelete.teamId
+        ? {
+            ...team,
+            balance: teamData.balance + playerToDelete.bidPrice,
+            playerCount: teamData.playerCount - 1,
+          }
+        : team
+    );
+    setInitialTeams(updatedTeams);
 
+    const deletedTeamIndex = updatedTeams.findIndex((team) => team.id === playerToDelete.teamId);
+    setBiddingStartTeamIndex(deletedTeamIndex);
+    localStorage.setItem("biddingStartTeamIndex", deletedTeamIndex.toString());
+
+    setPlayerToDelete(null);
+    setShowDeleteConfirmation(false);
+
+    await fetchData();
+  }
+};
   const handleCancelDelete = () => {
     setPlayerToDelete(null);
     setShowDeleteConfirmation(false);
@@ -1091,6 +1093,32 @@ const SelectedTeam = forwardRef((props, ref) => {
 
                   <span>{team.teamname}</span>
                 </h3>
+                <h3
+  style={{
+    textAlign: "center",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor:
+      team.playerCount >= allowedPlayerLength || 
+      (isBiddingOngoing && 
+       team !== currentHighestBiddingTeam &&
+       calculateMaxBidPrice(team, players, grades, selectedPlayer) <= currentHighestBidPrice)
+        ? "red"
+        : "transparent",
+  }}
+>
+  {team.playerCount >= allowedPlayerLength
+    ? "Max players reached"
+    : isBiddingOngoing && 
+      team !== currentHighestBiddingTeam &&
+      calculateMaxBidPrice(team, players, grades, selectedPlayer) <= currentHighestBidPrice 
+    ? "Insufficient balance"
+    : ""}
+</h3>
+
+
+
                 <div className="budget">
                   <p>
                     Max Bid Price:{" "}
